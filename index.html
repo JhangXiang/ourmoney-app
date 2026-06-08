@@ -1,0 +1,521 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>凱與喬的帳本</title>
+    
+    <script>
+        window.onerror = function(message, source, lineno, colno, error) {
+            alert("⚠️ 系統偵測到致命語法錯誤！\n\n錯誤訊息：" + message + "\n發生在第 " + lineno + " 行");
+            return true;
+        };
+    </script>
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body { font-family: 'PingFang TC', 'Helvetica Neue', sans-serif; background-color: #f8fafc; }
+        .nav-item { color: #94a3b8; transition: all 0.2s; }
+        .nav-item:hover:not(.active) { color: #cbd5e1; background-color: #1e293b; }
+        .nav-item.active { color: #ffffff; background-color: #4f46e5; pointer-events: none; }
+        .mobile-nav-item.active { color: #4f46e5; }
+        .mobile-nav-item:not(.active) { color: #94a3b8; }
+        #loading-overlay { background: rgba(255, 255, 255, 0.9); backdrop-filter: blur(4px); transition: opacity 0.3s; }
+        ::-webkit-scrollbar { width: 4px; height: 4px; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+    </style>
+</head>
+<body class="flex flex-col md:flex-row h-screen overflow-hidden text-slate-800">
+
+    <div id="loading-overlay" class="fixed inset-0 z-[100] flex flex-col items-center justify-center font-medium text-indigo-600 hidden">
+        <div class="animate-spin text-3xl mb-3"><i class="fas fa-circle-notch"></i></div>
+        <div id="loading-text" class="text-sm tracking-wide font-bold">同步連線中...</div>
+    </div>
+
+    <aside class="hidden md:flex w-64 bg-slate-900 text-slate-200 flex-col justify-between border-r border-slate-800 shrink-0 z-40">
+        <div class="p-6">
+            <div class="flex items-center gap-3 mb-10">
+                <div class="w-8 h-8 bg-indigo-500 rounded flex items-center justify-center shadow-lg"><i class="fas fa-wallet text-white text-sm"></i></div>
+                <div><h1 class="font-bold text-white tracking-wider text-sm uppercase">OurMoney</h1></div>
+            </div>
+            <nav class="space-y-1">
+                <button onclick="switchTab('dashboard')" id="btn-dashboard-desk" class="nav-item active w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium"><i class="fas fa-chart-pie w-5"></i> 總覽儀表板</button>
+                <button onclick="switchTab('calendar')" id="btn-calendar-desk" class="nav-item w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium"><i class="fas fa-list w-5"></i> 歷史明細</button>
+                <button onclick="switchTab('todo')" id="btn-todo-desk" class="nav-item w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium"><i class="fas fa-check-square w-5"></i> 待辦清單</button>
+            </nav>
+        </div>
+        <div class="p-4 border-t border-slate-800">
+            <button onclick="fetchData()" class="w-full text-xs text-slate-400 hover:text-white py-2 flex items-center justify-center gap-2 transition-colors"><i class="fas fa-sync-alt"></i> 手動重新整理</button>
+        </div>
+    </aside>
+
+    <div class="flex-1 flex flex-col overflow-hidden relative pb-16 md:pb-0">
+        <header class="h-16 bg-white border-b border-slate-100 flex items-center justify-between px-4 md:px-8 z-10 shrink-0">
+            <div class="flex items-center gap-2">
+                <span class="text-xs bg-slate-100 text-slate-600 font-bold px-3 py-1.5 rounded flex items-center gap-1"><i class="fas fa-building"></i> 新莊公積金帳本</span>
+            </div>
+            <div class="flex items-center gap-2 md:gap-3">
+                <button onclick="openTopupModal()" class="text-emerald-600 bg-emerald-50 hover:bg-emerald-100 text-xs md:text-sm font-bold px-3 md:px-4 py-2 rounded-lg flex items-center gap-1.5 transition-colors"><i class="fas fa-arrow-down"></i> <span class="hidden md:inline">存入基金</span></button>
+                <button onclick="openAddModal()" class="bg-indigo-600 text-white hover:bg-indigo-700 text-xs md:text-sm font-bold px-3 md:px-4 py-2 rounded-lg flex items-center gap-1.5 transition-colors shadow-sm"><i class="fas fa-plus"></i> <span class="hidden md:inline">新增支出</span></button>
+            </div>
+        </header>
+
+        <main class="flex-1 overflow-y-auto p-4 md:p-8 bg-slate-50">
+            <section id="tab-dashboard" class="space-y-4 md:space-y-6 max-w-6xl mx-auto">
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6">
+                    <div class="bg-white p-5 md:p-6 rounded-2xl shadow-sm border border-slate-100 flex flex-col justify-center">
+                        <p class="text-xs text-slate-500 font-semibold mb-1 uppercase tracking-wider flex items-center gap-1"><i class="fas fa-vault"></i> 基金餘額</p>
+                        <h3 class="text-3xl md:text-4xl font-bold text-slate-800" id="dash-fund-balance">$0</h3>
+                    </div>
+                    <div class="bg-indigo-600 p-5 md:p-6 rounded-2xl shadow-md text-white md:col-span-2 flex justify-between items-center">
+                        <div>
+                            <p class="text-xs text-indigo-200 font-semibold mb-1 uppercase tracking-wider" id="settle-title">代墊結算狀態</p>
+                            <h3 class="text-2xl md:text-3xl font-bold" id="settle-desc">互不相欠</h3>
+                        </div>
+                        <button onclick="archiveSettlement()" class="bg-white/10 hover:bg-white/20 text-white text-xs font-bold px-4 py-2 rounded border border-white/20 transition-colors"><i class="fas fa-check-double mr-1"></i> 封存</button>
+                    </div>
+                </div>
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6">
+                    <div class="bg-white p-5 md:p-6 rounded-2xl border border-slate-100 shadow-sm lg:col-span-2">
+                        <h4 class="font-bold text-slate-800 text-sm mb-4 flex items-center gap-2"><i class="fas fa-chart-line text-slate-400"></i> 近期趨勢</h4>
+                        <div class="h-48 md:h-64 relative"><canvas id="trendChart"></canvas></div>
+                    </div>
+                    <div class="bg-white p-5 md:p-6 rounded-2xl border border-slate-100 shadow-sm flex flex-col">
+                        <h4 class="font-bold text-slate-800 text-sm mb-4 flex items-center gap-2"><i class="fas fa-chart-pie text-slate-400"></i> 分類佔比</h4>
+                        <div class="flex-1 relative flex items-center justify-center min-h-[160px] md:min-h-[200px]"><canvas id="categoryChart"></canvas></div>
+                    </div>
+                </div>
+            </section>
+
+            <section id="tab-calendar" class="hidden max-w-4xl mx-auto h-full">
+                <div class="bg-white p-4 md:p-6 rounded-2xl border border-slate-100 shadow-sm h-[calc(100vh-140px)] flex flex-col">
+                    <h4 class="font-bold text-slate-800 text-sm mb-4 flex items-center gap-2"><i class="fas fa-history text-slate-400"></i> 完整明細</h4>
+                    <div class="space-y-2 md:space-y-3 flex-1 overflow-y-auto pr-1" id="full-history-list"></div>
+                </div>
+            </section>
+
+            <section id="tab-todo" class="hidden max-w-3xl mx-auto space-y-4 md:space-y-6">
+                <div class="bg-white p-5 md:p-6 rounded-2xl border border-slate-100 shadow-sm">
+                    <h4 class="font-bold text-slate-800 text-sm mb-4 flex items-center gap-2"><i class="fas fa-shopping-basket text-slate-400"></i> 採買與待辦</h4>
+                    <form id="todo-form" class="flex gap-2">
+                        <input type="text" id="todo-input" required class="flex-1 bg-slate-50 border border-slate-200 rounded p-3 text-sm outline-none" placeholder="輸入需要買的項目...">
+                        <button type="submit" class="bg-slate-800 text-white text-sm font-bold px-4 md:px-6 rounded transition-colors hover:bg-slate-700">新增</button>
+                    </form>
+                </div>
+                <div class="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden" id="todo-list"></div>
+            </section>
+        </main>
+    </div>
+
+    <nav class="md:hidden fixed bottom-0 w-full bg-white border-t border-slate-100 flex justify-around items-center h-16 z-40 px-2">
+        <button onclick="switchTab('dashboard')" id="btn-dashboard-mob" class="mobile-nav-item active flex flex-col items-center gap-1 w-1/3 py-2 transition-colors"><i class="fas fa-chart-pie text-lg"></i><span class="text-[10px] font-bold">總覽</span></button>
+        <button onclick="switchTab('calendar')" id="btn-calendar-mob" class="mobile-nav-item flex flex-col items-center gap-1 w-1/3 py-2 transition-colors"><i class="fas fa-list text-lg"></i><span class="text-[10px] font-bold">明細</span></button>
+        <button onclick="switchTab('todo')" id="btn-todo-mob" class="mobile-nav-item flex flex-col items-center gap-1 w-1/3 py-2 transition-colors"><i class="fas fa-check-square text-lg"></i><span class="text-[10px] font-bold">待辦</span></button>
+    </nav>
+
+    <div id="add-modal" class="hidden fixed inset-0 bg-slate-900/60 z-50 flex items-end md:items-center justify-center p-0 md:p-4 transition-opacity">
+        <div class="bg-white w-full max-w-md rounded-t-2xl md:rounded-2xl shadow-2xl flex flex-col max-h-[90vh]">
+            <div class="p-4 md:p-5 border-b border-slate-100 flex justify-between items-center shrink-0">
+                <h3 class="text-base font-bold text-slate-800 flex items-center gap-2"><i class="fas fa-pen"></i> 紀錄支出</h3>
+                <button type="button" onclick="closeModal('add-modal')" class="text-slate-400 hover:text-slate-600 p-1"><i class="fas fa-times text-lg"></i></button>
+            </div>
+            <div class="overflow-y-auto p-4 md:p-5">
+                <form id="expense-form" class="space-y-4">
+                    <div class="bg-indigo-50 border border-indigo-100 rounded-lg p-3 flex items-center gap-3">
+                        <label id="file-label-container" class="flex-1 bg-white border border-indigo-200 text-indigo-600 text-xs font-bold py-2 px-3 rounded text-center cursor-pointer hover:bg-indigo-50 transition-colors">
+                            <i class="fas fa-camera mr-1"></i> <span id="file-label-text">拍照/上傳發票</span>
+                            <input type="file" accept="image/*" capture="environment" class="hidden" id="receipt-upload">
+                        </label>
+                    </div>
+
+                    <div class="flex gap-3">
+                        <div class="flex-1">
+                            <label class="block text-xs font-bold text-slate-500 mb-1">日期</label>
+                            <input type="date" id="exp-date" required class="w-full bg-slate-50 border border-slate-200 rounded p-2.5 text-sm outline-none focus:border-indigo-400">
+                        </div>
+                        <div class="w-1/3">
+                            <label class="block text-xs font-bold text-slate-500 mb-1">分類</label>
+                            <select id="exp-category" class="w-full bg-slate-50 border border-slate-200 rounded p-2.5 text-sm outline-none focus:border-indigo-400">
+                                <option value="food">飲食</option>
+                                <option value="housing">居住</option>
+                                <option value="transport">交通</option>
+                                <option value="entertainment">娛樂</option>
+                                <option value="other">其他</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-500 mb-1">消費項目</label>
+                        <input type="text" id="exp-desc" required class="w-full bg-slate-50 border border-slate-200 rounded p-2.5 text-sm outline-none focus:border-indigo-400" placeholder="輸入名稱">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-500 mb-1">總金額 ($)</label>
+                        <input type="number" id="exp-amount" required class="w-full bg-slate-50 border border-slate-200 rounded p-2.5 text-sm outline-none focus:border-indigo-400 font-bold text-slate-800" placeholder="0">
+                    </div>
+                    
+                    <div>
+                        <label class="block text-xs font-bold text-slate-500 mb-1">誰付的錢？</label>
+                        <div class="flex gap-2">
+                            <label class="flex-1 text-center cursor-pointer">
+                                <input type="radio" name="payer" value="fund" class="peer sr-only" onchange="toggleSplitOptions()">
+                                <div class="peer-checked:bg-slate-800 peer-checked:text-white peer-checked:border-slate-800 border border-slate-200 text-slate-500 rounded p-2 text-xs font-bold transition-all"><i class="fas fa-vault mr-1"></i>公積金</div>
+                            </label>
+                            <label class="flex-1 text-center cursor-pointer">
+                                <input type="radio" name="payer" value="me" class="peer sr-only" checked onchange="toggleSplitOptions()">
+                                <div class="peer-checked:bg-indigo-600 peer-checked:text-white peer-checked:border-indigo-600 border border-slate-200 text-slate-500 rounded p-2 text-xs font-bold transition-all"><i class="fas fa-user mr-1"></i>凱</div>
+                            </label>
+                            <label class="flex-1 text-center cursor-pointer">
+                                <input type="radio" name="payer" value="partner" class="peer sr-only" onchange="toggleSplitOptions()">
+                                <div class="peer-checked:bg-indigo-600 peer-checked:text-white peer-checked:border-indigo-600 border border-slate-200 text-slate-500 rounded p-2 text-xs font-bold transition-all"><i class="fas fa-user mr-1"></i>喬</div>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div id="split-section" class="bg-slate-100 p-3 rounded border border-slate-200">
+                        <label class="block text-xs font-bold text-slate-600 mb-2 border-b border-slate-200 pb-1">實際負擔金額配置</label>
+                        <div class="flex items-center gap-3">
+                            <div class="flex-1">
+                                <label class="block text-[10px] text-slate-500 font-bold mb-1">凱的負擔</label>
+                                <div class="relative">
+                                    <span class="absolute left-2 top-2 text-slate-400 text-xs">$</span>
+                                    <input type="number" id="my-share" class="w-full bg-white border border-slate-200 rounded p-1.5 pl-6 text-sm outline-none focus:border-indigo-400 font-bold">
+                                </div>
+                            </div>
+                            <div class="text-slate-400 text-sm mt-4"><i class="fas fa-plus"></i></div>
+                            <div class="flex-1">
+                                <label class="block text-[10px] text-slate-500 font-bold mb-1">喬的負擔</label>
+                                <div class="relative">
+                                    <span class="absolute left-2 top-2 text-slate-400 text-xs">$</span>
+                                    <input type="number" id="partner-share" class="w-full bg-white border border-slate-200 rounded p-1.5 pl-6 text-sm outline-none focus:border-indigo-400 font-bold">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="flex justify-end gap-2 mt-2">
+                            <button type="button" onclick="setSplit(0.5)" class="text-[10px] bg-slate-200 hover:bg-slate-300 text-slate-600 px-2 py-1 rounded font-bold">平分</button>
+                            <button type="button" onclick="setSplit(1)" class="text-[10px] bg-slate-200 hover:bg-slate-300 text-slate-600 px-2 py-1 rounded font-bold">凱全出</button>
+                            <button type="button" onclick="setSplit(0)" class="text-[10px] bg-slate-200 hover:bg-slate-300 text-slate-600 px-2 py-1 rounded font-bold">喬全出</button>
+                        </div>
+                    </div>
+
+                    <div><input type="text" id="exp-note" class="w-full bg-slate-50 border border-slate-200 rounded p-2.5 text-sm outline-none" placeholder="備註 (選填)..."></div>
+                    <button type="submit" class="w-full bg-slate-800 text-white rounded p-3 font-bold text-sm mt-2 hover:bg-slate-700 transition-colors">儲存紀錄</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div id="topup-modal" class="hidden fixed inset-0 bg-slate-900/60 z-50 flex items-end md:items-center justify-center p-0 md:p-4 transition-opacity">
+        <div class="bg-white w-full max-w-sm rounded-t-2xl md:rounded-2xl shadow-2xl flex flex-col border-t-4 border-emerald-500">
+            <div class="p-4 md:p-5 border-b border-slate-100 flex justify-between items-center">
+                <h3 class="text-base font-bold text-slate-800 flex items-center gap-2"><i class="fas fa-arrow-down text-emerald-500"></i> 存入公積金</h3>
+                <button type="button" onclick="closeModal('topup-modal')" class="text-slate-400 hover:text-slate-600 p-1"><i class="fas fa-times text-lg"></i></button>
+            </div>
+            <form id="topup-form" class="p-4 md:p-5 space-y-4">
+                <div>
+                    <label class="block text-xs font-bold text-slate-500 mb-1">日期</label>
+                    <input type="date" id="top-date" required class="w-full bg-slate-50 border border-slate-200 rounded p-2.5 text-sm outline-none">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-500 mb-1">總金額 ($)</label>
+                    <input type="number" id="top-amount" required class="w-full bg-slate-50 border border-slate-200 rounded p-2.5 text-sm outline-none font-bold" placeholder="0">
+                </div>
+                <div><input type="text" id="top-note" class="w-full bg-slate-50 border border-slate-200 rounded p-2.5 text-sm outline-none" placeholder="備註..."></div>
+                <button type="submit" class="w-full bg-emerald-600 text-white rounded p-3 font-bold text-sm mt-2 hover:bg-emerald-700 transition-colors">確認入金</button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        const GAS_API_URL = "https://script.google.com/macros/s/AKfycbyxlgzLPXDS5Ojm_KoL__0szE2PFeYT6t9CPgpRVM2g6exzVGuGWbI7HM_GpIL0L_r5nw/exec";
+
+        let db = { transactions: [], todos: [] };
+        const catIcons = {
+            'food': { icon: 'fa-utensils', color: 'text-orange-500', bg: 'bg-orange-50' },
+            'housing': { icon: 'fa-home', color: 'text-blue-500', bg: 'bg-blue-50' },
+            'transport': { icon: 'fa-car', color: 'text-teal-500', bg: 'bg-teal-50' },
+            'entertainment': { icon: 'fa-gamepad', color: 'text-purple-500', bg: 'bg-purple-50' },
+            'other': { icon: 'fa-box', color: 'text-slate-500', bg: 'bg-slate-100' },
+            'topup': { icon: 'fa-arrow-down', color: 'text-emerald-600', bg: 'bg-emerald-50' }
+        };
+        let tChart = null, cChart = null;
+
+        // UI & Modal 控制
+        function switchTab(tabId) {
+            ['dashboard', 'calendar', 'todo'].forEach(t => {
+                document.getElementById(`tab-${t}`).classList.add('hidden');
+                document.getElementById(`btn-${t}-desk`).classList.remove('active');
+                document.getElementById(`btn-${t}-mob`).classList.remove('active');
+            });
+            document.getElementById(`tab-${tabId}`).classList.remove('hidden');
+            document.getElementById(`btn-${tabId}-desk`).classList.add('active');
+            document.getElementById(`btn-${tabId}-mob`).classList.add('active');
+            if(tabId === 'dashboard') setTimeout(renderCharts, 50);
+        }
+
+        function openAddModal() {
+            document.getElementById('exp-date').value = new Date().toISOString().split('T')[0];
+            document.getElementById('exp-amount').value = '';
+            document.getElementById('my-share').value = '';
+            document.getElementById('partner-share').value = '';
+            document.getElementById('receipt-upload').value = '';
+            document.getElementById('file-label-text').innerText = "拍照/上傳發票";
+            document.getElementById('file-label-container').classList.remove('bg-indigo-100', 'border-indigo-400');
+            toggleSplitOptions();
+            document.getElementById('add-modal').classList.remove('hidden');
+        }
+        function openTopupModal() { document.getElementById('top-date').value = new Date().toISOString().split('T')[0]; document.getElementById('topup-modal').classList.remove('hidden'); }
+        function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
+
+        document.getElementById('receipt-upload').addEventListener('change', (e) => {
+            const labelText = document.getElementById('file-label-text');
+            const labelContainer = document.getElementById('file-label-container');
+            if (e.target.files.length > 0) {
+                labelText.innerText = "已選取圖片";
+                labelContainer.classList.add('bg-indigo-100', 'border-indigo-400');
+            } else {
+                labelText.innerText = "拍照/上傳發票";
+                labelContainer.classList.remove('bg-indigo-100', 'border-indigo-400');
+            }
+        });
+
+        function getBase64(file) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.readAsDataURL(file);
+                reader.onload = () => resolve(reader.result);
+                reader.onerror = error => reject(error);
+            });
+        }
+
+        // 動態分攤邏輯
+        const amtInput = document.getElementById('exp-amount');
+        const myShareInput = document.getElementById('my-share');
+        const partnerShareInput = document.getElementById('partner-share');
+
+        amtInput.addEventListener('input', () => { const total = parseFloat(amtInput.value) || 0; myShareInput.value = total / 2; partnerShareInput.value = total / 2; });
+        myShareInput.addEventListener('input', () => { const total = parseFloat(amtInput.value) || 0; let myVal = parseFloat(myShareInput.value) || 0; if (myVal > total) { myVal = total; myShareInput.value = total; } partnerShareInput.value = total - myVal; });
+        partnerShareInput.addEventListener('input', () => { const total = parseFloat(amtInput.value) || 0; let partnerVal = parseFloat(partnerShareInput.value) || 0; if (partnerVal > total) { partnerVal = total; partnerShareInput.value = total; } myShareInput.value = total - partnerVal; });
+
+        function setSplit(ratio) { const total = parseFloat(amtInput.value) || 0; myShareInput.value = total * ratio; partnerShareInput.value = total - (total * ratio); }
+        function toggleSplitOptions() { document.getElementById('split-section').classList.toggle('hidden', document.querySelector('input[name="payer"]:checked').value === 'fund'); }
+
+        // --- 防呆連線邏輯 ---
+        function showLoading(msg = "同步連線中...") { 
+            document.getElementById('loading-text').innerText = msg;
+            document.getElementById('loading-overlay').classList.remove('hidden'); 
+        }
+        function hideLoading() { document.getElementById('loading-overlay').classList.add('hidden'); }
+
+        async function fetchData() {
+            showLoading("正在拉取最新數據...");
+            try { 
+                let res = await fetch(GAS_API_URL); 
+                let rawText = await res.text();
+                try {
+                    db = JSON.parse(rawText);
+                } catch (jsonErr) {
+                    throw new Error("API 未回傳正確的 JSON 資料。\n請確定你有正確點擊 Apps Script 裡的『部署』>『新增部署』。");
+                }
+                updateCoreUI(); 
+            } 
+            catch (err) { 
+                alert("⛔️ 讀取失敗：\n\n" + err.message); 
+            } 
+            finally { hideLoading(); }
+        }
+
+        async function sendPostAction(action, dataObj, extraParams = {}) {
+            showLoading("上傳雲端中...");
+            try {
+                let res = await fetch(GAS_API_URL, { method: "POST", body: JSON.stringify(Object.assign({ action, data: dataObj }, extraParams)) });
+                let result = await res.json();
+                if(result.status === "error") throw new Error(result.message);
+                await fetchData();
+            } catch (err) { 
+                alert("⛔️ 寫入失敗：\n\n" + err.message); 
+                hideLoading();
+            }
+        }
+
+        function updateCoreUI() {
+            let fundBalance = 0, myPersonalDebt = 0;
+            if(!db.transactions) db.transactions = [];
+            db.transactions.sort((a, b) => new Date(b.date) - new Date(a.date));
+
+            db.transactions.forEach(t => {
+                const amt = parseFloat(t.amount);
+                const myRatio = parseFloat(t.splitRatio) / 100; 
+                if (t.type === 'topup') fundBalance += amt;
+                else if (t.type === 'expense') {
+                    if (t.payer === 'fund') fundBalance -= amt;
+                    else if (!t.isSettled) {
+                        let myShare = amt * myRatio;
+                        let partnerShare = amt - myShare;
+                        if (t.payer === 'me') myPersonalDebt += partnerShare;
+                        else if (t.payer === 'partner') myPersonalDebt -= myShare;
+                    }
+                }
+            });
+
+            document.getElementById('dash-fund-balance').innerText = `$${fundBalance.toLocaleString()}`;
+            const sTitle = document.getElementById('settle-title');
+            const sDesc = document.getElementById('settle-desc');
+            
+            if (myPersonalDebt === 0) { sTitle.innerText = "代墊結算狀態"; sDesc.innerText = "互不相欠"; }
+            else if (myPersonalDebt > 0) { sTitle.innerText = "喬須給凱"; sDesc.innerText = `$${myPersonalDebt.toLocaleString()}`; }
+            else { sTitle.innerText = "凱須給喬"; sDesc.innerText = `$${Math.abs(myPersonalDebt).toLocaleString()}`; }
+
+            renderHistoryList();
+            renderTodos();
+            renderCharts();
+        }
+
+        document.getElementById('expense-form').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            const payer = document.querySelector('input[name="payer"]:checked').value;
+            const total = parseFloat(amtInput.value);
+            const myShare = parseFloat(myShareInput.value) || 0;
+            let calcRatio = payer === 'fund' ? 0 : (myShare / total) * 100;
+
+            const expenseData = {
+                id: Date.now(), type: 'expense', date: document.getElementById('exp-date').value,
+                desc: document.getElementById('exp-desc').value, amount: total,
+                payer: payer, splitRatio: calcRatio.toFixed(2),
+                category: document.getElementById('exp-category').value, note: document.getElementById('exp-note').value,
+                isSettled: false
+            };
+
+            let imageData = null;
+            const fileInput = document.getElementById('receipt-upload');
+            if (fileInput.files.length > 0) {
+                const file = fileInput.files[0];
+                const base64String = await getBase64(file);
+                const splitData = base64String.split(',');
+                imageData = { mimeType: file.type, base64: splitData[1] };
+            }
+
+            closeModal('add-modal');
+            sendPostAction("addTransaction", expenseData, { imageData: imageData });
+        });
+
+        document.getElementById('topup-form').addEventListener('submit', function(e) {
+            e.preventDefault();
+            sendPostAction("addTransaction", {
+                id: Date.now(), type: 'topup', date: document.getElementById('top-date').value,
+                desc: '存入公積金', amount: parseFloat(document.getElementById('top-amount').value),
+                category: 'topup', note: document.getElementById('top-note').value
+            });
+            closeModal('topup-modal');
+        });
+
+        function deleteTx(id) { if(confirm('刪除這筆紀錄？')) sendPostAction("deleteTransaction", null, { id }); }
+        function archiveSettlement() { if(confirm('確認將目前的代墊結清歸零嗎？')) sendPostAction("archive", null); }
+
+        function renderHistoryList() {
+            const list = document.getElementById('full-history-list');
+            list.innerHTML = '';
+            db.transactions.forEach(t => {
+                const s = catIcons[t.category] || catIcons['other'];
+                let tag = t.type==='topup' ? `<span class="text-[9px] bg-emerald-100 text-emerald-700 px-1.5 py-0.5 rounded font-bold">入金</span>` : (t.payer==='fund' ? `<span class="text-[9px] bg-slate-200 text-slate-600 px-1.5 py-0.5 rounded font-bold">公積金</span>` : `<span class="text-[9px] bg-indigo-100 text-indigo-700 px-1.5 py-0.5 rounded font-bold">${t.payer==='me'?'凱':'喬'}付</span>`);
+                let imgIcon = t.receiptUrl ? `<a href="${t.receiptUrl}" target="_blank" class="text-indigo-400 hover:text-indigo-600 ml-2"><i class="fas fa-image"></i></a>` : '';
+
+                list.insertAdjacentHTML('beforeend', `
+                    <div class="p-3 border-b border-slate-100 flex justify-between items-center group hover:bg-slate-50 transition-colors">
+                        <div class="flex gap-3 items-center">
+                            <div class="w-10 h-10 rounded ${s.bg} ${s.color} flex items-center justify-center text-sm shrink-0"><i class="fas ${s.icon}"></i></div>
+                            <div>
+                                <h5 class="font-bold text-slate-700 text-xs md:text-sm">${t.desc} ${imgIcon}</h5>
+                                <div class="flex items-center gap-2 mt-0.5"><p class="text-[10px] text-slate-400 font-medium">${t.date}</p>${tag}</div>
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-3">
+                            <div class="font-bold text-sm ${t.type==='topup'?'text-emerald-600':'text-slate-800'}">$${parseFloat(t.amount).toLocaleString()}</div>
+                            <button onclick="deleteTx(${t.id})" class="text-slate-300 hover:text-rose-500 p-1 md:opacity-0 md:group-hover:opacity-100 transition-opacity"><i class="fas fa-trash text-xs"></i></button>
+                        </div>
+                    </div>
+                `);
+            });
+        }
+
+        document.getElementById('todo-form').addEventListener('submit', function(e) {
+            e.preventDefault();
+            sendPostAction("addTodo", { id: Date.now(), text: document.getElementById('todo-input').value });
+            document.getElementById('todo-input').value = '';
+        });
+        function toggleTodo(id, cur) { sendPostAction("toggleTodo", null, { id, completed: !cur }); }
+        function deleteTodo(id) { sendPostAction("deleteTodo", null, { id }); }
+        function convertTodo(id, text) { openAddModal(); document.getElementById('exp-desc').value = text; sendPostAction("deleteTodo", null, { id }); }
+        
+        function renderTodos() {
+            const list = document.getElementById('todo-list');
+            list.innerHTML = '';
+            if(!db.todos) return;
+            db.todos.forEach(t => {
+                let isComp = (t.completed === true || t.completed === "true");
+                list.insertAdjacentHTML('beforeend', `
+                    <div class="p-3 border-b border-slate-50 flex items-center justify-between ${isComp ? 'opacity-40' : ''}">
+                        <div class="flex items-center gap-3">
+                            <input type="checkbox" ${isComp ? 'checked' : ''} onclick="toggleTodo(${t.id}, ${isComp})" class="w-4 h-4 text-indigo-600 rounded">
+                            <span class="text-xs md:text-sm font-bold ${isComp ? 'line-through text-slate-400' : 'text-slate-700'}">${t.text}</span>
+                        </div>
+                        <div class="flex gap-2">
+                            ${!isComp ? `<button onclick="convertTodo(${t.id}, '${t.text}')" class="text-[10px] md:text-xs bg-slate-100 text-slate-600 px-2 md:px-3 py-1 rounded font-bold hover:bg-slate-200"><i class="fas fa-exchange-alt mr-1"></i>轉支出</button>` : ''}
+                            <button onclick="deleteTodo(${t.id})" class="text-slate-300 hover:text-rose-500 p-1"><i class="fas fa-trash text-xs"></i></button>
+                        </div>
+                    </div>
+                `);
+            });
+        }
+
+        function renderCharts() {
+            if(document.getElementById('tab-dashboard').classList.contains('hidden')) return;
+            const ctxL = document.getElementById('trendChart').getContext('2d');
+            const labels = [];
+            for (let i = 6; i >= 0; i--) { const d = new Date(); d.setDate(d.getDate() - i); labels.push(d.toISOString().split('T')[0]); }
+            const lineData = labels.map(date => db.transactions.filter(t => t.date === date && t.type === 'expense').reduce((sum, t) => sum + parseFloat(t.amount), 0));
+            
+            if(tChart) tChart.destroy();
+            tChart = new Chart(ctxL, {
+                type: 'line',
+                data: { 
+                    labels: labels.map(l => l.substring(5)), 
+                    datasets: [{ data: lineData, borderColor: '#4f46e5', backgroundColor: 'rgba(79, 70, 229, 0.1)', borderWidth: 2, tension: 0.3, fill: true, pointBackgroundColor: '#4f46e5', pointRadius: 3 }] 
+                },
+                options: { 
+                    responsive: true, 
+                    maintainAspectRatio: false, 
+                    plugins: { legend: { display: false } }, 
+                    scales: { 
+                        x: { grid: { display: false }, ticks: { font: { size: 10 } } }, 
+                        y: { beginAtZero: true, border: { dash: [4, 4] }, ticks: { font: { size: 10 } } } 
+                    } 
+                }
+            });
+
+            const ctxC = document.getElementById('categoryChart').getContext('2d');
+            const catSums = { 'food':0, 'housing':0, 'transport':0, 'entertainment':0, 'other':0 };
+            db.transactions.filter(t => t.type === 'expense').forEach(t => { if(catSums[t.category]!==undefined) catSums[t.category] += parseFloat(t.amount); });
+            
+            if(cChart) cChart.destroy();
+            cChart = new Chart(ctxC, {
+                type: 'doughnut',
+                data: { 
+                    labels: ['飲食', '居住', '交通', '娛樂', '其他'], 
+                    datasets: [{ data: Object.values(catSums), backgroundColor: ['#3b82f6', '#14b8a6', '#a855f7', '#f59e0b', '#94a3b8'], borderWidth: 0 }] 
+                },
+                options: { 
+                    responsive: true, 
+                    maintainAspectRatio: false, 
+                    cutout: '75%', 
+                    plugins: { legend: { position: 'right', labels: { usePointStyle: true, boxWidth: 6, font: { size: 11 } } } } 
+                }
+            });
+        }
+
+        // 初次進入頁面，自動讀取
+        window.onload = fetchData;
+    </script>
+</body>
+</html>

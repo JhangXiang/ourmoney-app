@@ -30,7 +30,6 @@
     </script>
 
     <style>
-        /* 升級為 100dvh 解決手機瀏覽器高度計算 Bug */
         html, body { background-color: #FBFBFA; color: #111111; overscroll-behavior-y: none; touch-action: manipulation; -webkit-tap-highlight-color: transparent; }
         ::-webkit-scrollbar { display: none; }
         
@@ -42,9 +41,8 @@
 
         input[type="number"]::-webkit-inner-spin-button, input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
         .no-ring:focus { outline: none; box-shadow: none; }
-        
-        /* 動態安全距離設定 */
         .pb-safe { padding-bottom: calc(env(safe-area-inset-bottom) + 8px); }
+        .main-content-pb { padding-bottom: calc(env(safe-area-inset-bottom) + 90px); }
         #sync-indicator { transition: opacity 0.3s; }
     </style>
 </head>
@@ -806,14 +804,14 @@
             else { statusText.innerText = `超支 $${Math.abs(left).toLocaleString()}`; statusText.className = "text-[10px] text-[#9F2F2D] text-right font-bold"; }
         }
 
-        // --- 修復：手動驗證表單金額，避免必填死當 ---
+        // --- 防呆處理：手動攔截空值 ---
         document.getElementById('expense-form').addEventListener('submit', async function(e) {
             e.preventDefault();
             
             const total = parseFloat(amtInput.value);
             if (isNaN(total) || total <= 0) {
-                alert('⚠️ 請點擊金額欄位，輸入支出總金額！');
-                return;
+                alert('⚠️ 記帳失敗：請點擊金額欄位，輸入正確的支出金額喔！');
+                return; // 終止送出
             }
 
             const payer = document.querySelector('input[name="payer"]:checked').value;

@@ -41,7 +41,6 @@
 
         input[type="number"]::-webkit-inner-spin-button, input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
         .no-ring:focus { outline: none; box-shadow: none; }
-        
         #sync-indicator { transition: opacity 0.3s; }
     </style>
 </head>
@@ -61,13 +60,13 @@
             <div class="space-y-4">
                 <div>
                     <label class="block text-xs uppercase font-mono tracking-widest text-mute mb-1.5">暱稱</label>
-                    <input type="text" id="auth-name" class="w-full bg-surface border border-line rounded-lg p-3 text-sm outline-none focus:border-ink transition-colors" placeholder="e.g. 凱">
+                    <input type="text" id="auth-name" class="w-full h-11 bg-surface border border-line rounded-lg px-3 text-sm outline-none focus:border-ink transition-colors" placeholder="e.g. 凱">
                 </div>
                 <div>
                     <label class="block text-xs uppercase font-mono tracking-widest text-mute mb-1.5">大頭貼 (Emoji)</label>
-                    <input type="text" id="auth-avatar" class="w-full bg-surface border border-line rounded-lg p-3 text-2xl outline-none focus:border-ink transition-colors text-center" value="🧑🏻‍💻" maxlength="2">
+                    <input type="text" id="auth-avatar" class="w-full h-11 bg-surface border border-line rounded-lg px-3 text-2xl outline-none focus:border-ink transition-colors text-center" value="🧑🏻‍💻" maxlength="2">
                 </div>
-                <button onclick="saveProfile()" class="w-full bg-ink text-surface rounded-lg p-3 font-medium hover:bg-gray-800 transition-transform active:scale-95">開始使用</button>
+                <button onclick="saveProfile()" class="w-full h-11 bg-ink text-surface rounded-lg font-medium hover:bg-gray-800 transition-transform active:scale-95">開始使用</button>
             </div>
         </div>
     </div>
@@ -216,7 +215,7 @@
                 <h3 class="text-sm font-medium text-ink flex items-center gap-2"><i class="ph-bold ph-pencil-simple text-mute"></i> 紀錄支出</h3>
                 <button type="button" onclick="closeModal('add-modal')" class="text-mute hover:text-ink transition-colors p-1"><i class="ph-bold ph-x text-lg"></i></button>
             </div>
-            <div class="overflow-y-auto p-4 md:p-6 pb-[env(safe-area-inset-bottom)]">
+            <div class="overflow-y-auto p-4 md:p-6 pb-24">
                 <form id="expense-form" class="space-y-5">
                     
                     <div class="border border-dashed border-line rounded-md p-3 flex justify-center items-center group hover:border-mute transition-colors cursor-pointer relative overflow-hidden bg-bone min-h-[60px]">
@@ -227,21 +226,29 @@
                         <img id="preview-image" src="" class="hidden absolute inset-0 w-full h-full object-contain z-0">
                     </div>
 
-                    <div class="grid grid-cols-2 gap-4 items-end">
-                        <div>
+                    <div class="flex gap-4">
+                        <div class="flex-1">
                             <label class="block text-[10px] uppercase font-mono tracking-widest text-mute mb-1.5">日期</label>
-                            <input type="date" id="exp-date" required class="w-full h-10 bg-bone border border-line rounded-md px-2 text-sm outline-none focus:border-ink transition-colors">
+                            <input type="date" id="exp-date" required class="w-full h-11 bg-bone border border-line rounded-md px-3 text-sm outline-none focus:border-ink transition-colors box-border">
                         </div>
-                        <div>
+                        <div class="flex-1">
                             <label class="block text-[10px] uppercase font-mono tracking-widest text-mute mb-1.5">分類</label>
-                            <select id="exp-category" class="w-full h-10 bg-bone border border-line rounded-md px-2 text-sm outline-none focus:border-ink transition-colors">
-                                <option value="food">飲食</option>
-                                <option value="housing">居住</option>
-                                <option value="transport">交通</option>
-                                <option value="entertainment">娛樂</option>
-                                <option value="other">其他/轉帳</option>
-                            </select>
+                            <div class="relative">
+                                <select id="exp-category" onchange="handleCategoryChange()" class="w-full h-11 bg-bone border border-line rounded-md px-3 text-sm outline-none focus:border-ink transition-colors appearance-none box-border">
+                                    <option value="food">飲食</option>
+                                    <option value="housing">居住</option>
+                                    <option value="transport">交通</option>
+                                    <option value="entertainment">娛樂</option>
+                                    <option value="other">其他/轉帳</option>
+                                    <option value="custom">自訂輸入...</option>
+                                </select>
+                                <div class="absolute right-3 top-0 bottom-0 flex items-center pointer-events-none text-mute"><i class="ph-bold ph-caret-down"></i></div>
+                            </div>
                         </div>
+                    </div>
+
+                    <div id="custom-cat-wrapper" class="hidden">
+                        <input type="text" id="exp-custom-cat" class="w-full h-11 bg-bone border border-line rounded-md px-3 text-sm outline-none focus:border-ink transition-colors placeholder:text-line" placeholder="請輸入自訂分類名稱 (如：寵物、保險)">
                     </div>
 
                     <div>
@@ -252,14 +259,27 @@
                     <div>
                         <label class="block text-[10px] uppercase font-mono tracking-widest text-mute mb-1.5">總金額</label>
                         <div class="relative">
-                            <span class="absolute left-0 top-1.5 text-mute font-mono">$</span>
-                            <input type="text" id="exp-amount" readonly onclick="openCalculator()" class="w-full bg-transparent border-b border-line p-2 pl-4 text-xl font-mono text-ink outline-none focus:border-ink placeholder:text-line transition-colors cursor-pointer" placeholder="點擊計算...">
+                            <span class="absolute left-0 top-2.5 text-mute font-mono">$</span>
+                            <input type="text" id="exp-amount" readonly onclick="openCalculator()" class="w-full bg-transparent border-b border-line py-2 pl-4 text-xl font-mono text-ink outline-none focus:border-ink placeholder:text-line transition-colors cursor-pointer" placeholder="點擊計算...">
                         </div>
                     </div>
                     
                     <div id="payer-section-wrapper">
                         <label class="block text-[10px] uppercase font-mono tracking-widest text-mute mb-2">付款來源</label>
-                        <div class="flex gap-2 bg-bone p-1 rounded-md border border-line" id="payer-container"></div>
+                        <div class="flex gap-2 bg-bone p-1 rounded-md border border-line" id="payer-container">
+                            <label class="flex-1 text-center cursor-pointer">
+                                <input type="radio" name="payer" value="fund" class="peer sr-only" onchange="toggleSplitOptions()">
+                                <div class="peer-checked:bg-surface peer-checked:shadow-sm peer-checked:text-ink text-mute rounded py-2 text-xs transition-all font-medium flex justify-center items-center gap-1"><i class="ph-bold ph-bank"></i>公積金</div>
+                            </label>
+                            <label class="flex-1 text-center cursor-pointer">
+                                <input type="radio" name="payer" value="me" class="peer sr-only" checked onchange="toggleSplitOptions()">
+                                <div id="payer-me-label" class="peer-checked:bg-surface peer-checked:shadow-sm peer-checked:text-ink text-mute rounded py-2 text-xs transition-all font-medium flex justify-center items-center gap-1">🧑🏻‍💻 我</div>
+                            </label>
+                            <label class="flex-1 text-center cursor-pointer">
+                                <input type="radio" name="payer" value="partner" class="peer sr-only" onchange="toggleSplitOptions()">
+                                <div class="peer-checked:bg-surface peer-checked:shadow-sm peer-checked:text-ink text-mute rounded py-2 text-xs transition-all font-medium flex justify-center items-center gap-1"><i class="ph-bold ph-user"></i>另一半</div>
+                            </label>
+                        </div>
                     </div>
 
                     <div id="split-section" class="bg-bone p-4 rounded-md border border-line">
@@ -274,16 +294,16 @@
                             <div class="flex-1">
                                 <label class="block text-[9px] text-mute mb-1">我的負擔</label>
                                 <div class="relative">
-                                    <span class="absolute left-2 top-1.5 text-mute font-mono text-xs">$</span>
-                                    <input type="number" id="my-share" class="w-full bg-surface border border-line rounded p-1.5 pl-5 text-sm font-mono outline-none focus:border-ink transition-colors">
+                                    <span class="absolute left-2 top-2 text-mute font-mono text-xs">$</span>
+                                    <input type="number" id="my-share" class="w-full bg-surface border border-line rounded p-2 pl-6 text-sm font-mono outline-none focus:border-ink transition-colors">
                                 </div>
                             </div>
                             <div class="text-line text-sm mt-3"><i class="ph-bold ph-plus"></i></div>
                             <div class="flex-1">
                                 <label class="block text-[9px] text-mute mb-1">另一半負擔</label>
                                 <div class="relative">
-                                    <span class="absolute left-2 top-1.5 text-mute font-mono text-xs">$</span>
-                                    <input type="number" id="partner-share" class="w-full bg-surface border border-line rounded p-1.5 pl-5 text-sm font-mono outline-none focus:border-ink transition-colors">
+                                    <span class="absolute left-2 top-2 text-mute font-mono text-xs">$</span>
+                                    <input type="number" id="partner-share" class="w-full bg-surface border border-line rounded p-2 pl-6 text-sm font-mono outline-none focus:border-ink transition-colors">
                                 </div>
                             </div>
                         </div>
@@ -301,7 +321,7 @@
                         <div id="recurring-opts" class="hidden mt-3 pt-3 border-t border-line space-y-3">
                             <div>
                                 <label class="block text-[10px] text-mute mb-1">觸發頻率</label>
-                                <select id="rec-type" class="w-full bg-surface border border-line rounded p-2 text-xs" onchange="toggleRecDetails()">
+                                <select id="rec-type" class="w-full bg-surface border border-line rounded h-10 px-2 text-xs outline-none" onchange="toggleRecDetails()">
                                     <option value="monthly">每月</option>
                                     <option value="weekly">每週</option>
                                     <option value="daily">每日</option>
@@ -310,13 +330,13 @@
                             <div id="rec-detail-weekly" class="hidden">
                                 <label class="block text-[10px] text-mute mb-1">選擇星期 (可複選)</label>
                                 <div class="flex gap-1 flex-wrap" id="weekly-checks">
-                                    <label class="flex-1 text-center border border-line rounded py-1 bg-surface text-xs cursor-pointer"><input type="checkbox" value="1" class="sr-only peer"><div class="peer-checked:bg-ink peer-checked:text-surface rounded transition-colors">一</div></label>
-                                    <label class="flex-1 text-center border border-line rounded py-1 bg-surface text-xs cursor-pointer"><input type="checkbox" value="2" class="sr-only peer"><div class="peer-checked:bg-ink peer-checked:text-surface rounded transition-colors">二</div></label>
-                                    <label class="flex-1 text-center border border-line rounded py-1 bg-surface text-xs cursor-pointer"><input type="checkbox" value="3" class="sr-only peer"><div class="peer-checked:bg-ink peer-checked:text-surface rounded transition-colors">三</div></label>
-                                    <label class="flex-1 text-center border border-line rounded py-1 bg-surface text-xs cursor-pointer"><input type="checkbox" value="4" class="sr-only peer"><div class="peer-checked:bg-ink peer-checked:text-surface rounded transition-colors">四</div></label>
-                                    <label class="flex-1 text-center border border-line rounded py-1 bg-surface text-xs cursor-pointer"><input type="checkbox" value="5" class="sr-only peer"><div class="peer-checked:bg-ink peer-checked:text-surface rounded transition-colors">五</div></label>
-                                    <label class="flex-1 text-center border border-line rounded py-1 bg-surface text-xs cursor-pointer"><input type="checkbox" value="6" class="sr-only peer"><div class="peer-checked:bg-ink peer-checked:text-surface rounded transition-colors">六</div></label>
-                                    <label class="flex-1 text-center border border-line rounded py-1 bg-surface text-xs cursor-pointer"><input type="checkbox" value="0" class="sr-only peer"><div class="peer-checked:bg-ink peer-checked:text-surface rounded transition-colors">日</div></label>
+                                    <label class="flex-1 text-center border border-line rounded py-1.5 bg-surface text-xs cursor-pointer"><input type="checkbox" value="1" class="sr-only peer"><div class="peer-checked:bg-ink peer-checked:text-surface rounded transition-colors h-full flex items-center justify-center">一</div></label>
+                                    <label class="flex-1 text-center border border-line rounded py-1.5 bg-surface text-xs cursor-pointer"><input type="checkbox" value="2" class="sr-only peer"><div class="peer-checked:bg-ink peer-checked:text-surface rounded transition-colors h-full flex items-center justify-center">二</div></label>
+                                    <label class="flex-1 text-center border border-line rounded py-1.5 bg-surface text-xs cursor-pointer"><input type="checkbox" value="3" class="sr-only peer"><div class="peer-checked:bg-ink peer-checked:text-surface rounded transition-colors h-full flex items-center justify-center">三</div></label>
+                                    <label class="flex-1 text-center border border-line rounded py-1.5 bg-surface text-xs cursor-pointer"><input type="checkbox" value="4" class="sr-only peer"><div class="peer-checked:bg-ink peer-checked:text-surface rounded transition-colors h-full flex items-center justify-center">四</div></label>
+                                    <label class="flex-1 text-center border border-line rounded py-1.5 bg-surface text-xs cursor-pointer"><input type="checkbox" value="5" class="sr-only peer"><div class="peer-checked:bg-ink peer-checked:text-surface rounded transition-colors h-full flex items-center justify-center">五</div></label>
+                                    <label class="flex-1 text-center border border-line rounded py-1.5 bg-surface text-xs cursor-pointer"><input type="checkbox" value="6" class="sr-only peer"><div class="peer-checked:bg-ink peer-checked:text-surface rounded transition-colors h-full flex items-center justify-center">六</div></label>
+                                    <label class="flex-1 text-center border border-line rounded py-1.5 bg-surface text-xs cursor-pointer"><input type="checkbox" value="0" class="sr-only peer"><div class="peer-checked:bg-ink peer-checked:text-surface rounded transition-colors h-full flex items-center justify-center">日</div></label>
                                 </div>
                             </div>
                             <div id="rec-detail-monthly">
@@ -326,7 +346,7 @@
                         </div>
                     </div>
                     
-                    <button type="submit" class="w-full bg-ink text-surface rounded-md p-3 text-sm font-medium mt-4 hover:bg-gray-800 transition-transform active:scale-[0.98]">儲存紀錄</button>
+                    <button type="submit" class="w-full bg-ink text-surface rounded-md p-3 text-sm font-medium mt-4 hover:bg-gray-800 transition-transform active:scale-[0.98]">儲存</button>
                 </form>
             </div>
         </div>
@@ -338,22 +358,22 @@
             <button type="button" onclick="closeCalculator()" class="text-surface bg-ink text-sm font-medium px-4 py-2 rounded-lg active:scale-95 transition-transform">確定</button>
         </div>
         <div class="grid grid-cols-4 gap-[1px] bg-line text-ink">
-            <button type="button" onclick="calcInput('7')" class="bg-surface py-4 text-xl font-mono active:bg-bone">7</button>
-            <button type="button" onclick="calcInput('8')" class="bg-surface py-4 text-xl font-mono active:bg-bone">8</button>
-            <button type="button" onclick="calcInput('9')" class="bg-surface py-4 text-xl font-mono active:bg-bone">9</button>
-            <button type="button" onclick="calcInput('/')" class="bg-surface py-4 text-xl font-mono text-mute active:bg-bone">÷</button>
-            <button type="button" onclick="calcInput('4')" class="bg-surface py-4 text-xl font-mono active:bg-bone">4</button>
-            <button type="button" onclick="calcInput('5')" class="bg-surface py-4 text-xl font-mono active:bg-bone">5</button>
-            <button type="button" onclick="calcInput('6')" class="bg-surface py-4 text-xl font-mono active:bg-bone">6</button>
-            <button type="button" onclick="calcInput('*')" class="bg-surface py-4 text-xl font-mono text-mute active:bg-bone">×</button>
-            <button type="button" onclick="calcInput('1')" class="bg-surface py-4 text-xl font-mono active:bg-bone">1</button>
-            <button type="button" onclick="calcInput('2')" class="bg-surface py-4 text-xl font-mono active:bg-bone">2</button>
-            <button type="button" onclick="calcInput('3')" class="bg-surface py-4 text-xl font-mono active:bg-bone">3</button>
-            <button type="button" onclick="calcInput('-')" class="bg-surface py-4 text-xl font-mono text-mute active:bg-bone">−</button>
-            <button type="button" onclick="calcInput('C')" class="bg-surface py-4 text-xl font-mono text-[#9F2F2D] active:bg-bone">C</button>
-            <button type="button" onclick="calcInput('0')" class="bg-surface py-4 text-xl font-mono active:bg-bone">0</button>
-            <button type="button" onclick="calcInput('=')" class="bg-surface py-4 text-xl font-mono text-[#1F6C9F] active:bg-bone">=</button>
-            <button type="button" onclick="calcInput('+')" class="bg-surface py-4 text-xl font-mono text-mute active:bg-bone">+</button>
+            <button type="button" onclick="calcInput('7')" class="bg-surface py-5 text-xl font-mono active:bg-bone">7</button>
+            <button type="button" onclick="calcInput('8')" class="bg-surface py-5 text-xl font-mono active:bg-bone">8</button>
+            <button type="button" onclick="calcInput('9')" class="bg-surface py-5 text-xl font-mono active:bg-bone">9</button>
+            <button type="button" onclick="calcInput('/')" class="bg-surface py-5 text-xl font-mono text-mute active:bg-bone">÷</button>
+            <button type="button" onclick="calcInput('4')" class="bg-surface py-5 text-xl font-mono active:bg-bone">4</button>
+            <button type="button" onclick="calcInput('5')" class="bg-surface py-5 text-xl font-mono active:bg-bone">5</button>
+            <button type="button" onclick="calcInput('6')" class="bg-surface py-5 text-xl font-mono active:bg-bone">6</button>
+            <button type="button" onclick="calcInput('*')" class="bg-surface py-5 text-xl font-mono text-mute active:bg-bone">×</button>
+            <button type="button" onclick="calcInput('1')" class="bg-surface py-5 text-xl font-mono active:bg-bone">1</button>
+            <button type="button" onclick="calcInput('2')" class="bg-surface py-5 text-xl font-mono active:bg-bone">2</button>
+            <button type="button" onclick="calcInput('3')" class="bg-surface py-5 text-xl font-mono active:bg-bone">3</button>
+            <button type="button" onclick="calcInput('-')" class="bg-surface py-5 text-xl font-mono text-mute active:bg-bone">−</button>
+            <button type="button" onclick="calcInput('C')" class="bg-surface py-5 text-xl font-mono text-[#9F2F2D] active:bg-bone">C</button>
+            <button type="button" onclick="calcInput('0')" class="bg-surface py-5 text-xl font-mono active:bg-bone">0</button>
+            <button type="button" onclick="calcInput('=')" class="bg-surface py-5 text-xl font-mono text-[#1F6C9F] active:bg-bone">=</button>
+            <button type="button" onclick="calcInput('+')" class="bg-surface py-5 text-xl font-mono text-mute active:bg-bone">+</button>
         </div>
     </div>
 
@@ -366,13 +386,13 @@
             <form id="topup-form" class="p-4 md:p-6 space-y-5 pb-safe">
                 <div>
                     <label class="block text-[10px] uppercase font-mono tracking-widest text-mute mb-1.5">日期</label>
-                    <input type="date" id="top-date" required class="w-full bg-bone border border-line rounded-md p-2 text-sm outline-none focus:border-ink">
+                    <input type="date" id="top-date" required class="w-full h-11 bg-bone border border-line rounded-md px-3 text-sm outline-none focus:border-ink">
                 </div>
                 <div>
                     <label class="block text-[10px] uppercase font-mono tracking-widest text-mute mb-1.5">總金額</label>
                     <div class="relative">
-                        <span class="absolute left-0 top-1.5 text-mute font-mono">$</span>
-                        <input type="number" id="top-amount" required class="w-full bg-transparent border-b border-line p-2 pl-4 text-xl font-mono text-ink outline-none focus:border-ink placeholder:text-line" placeholder="0">
+                        <span class="absolute left-0 top-2.5 text-mute font-mono">$</span>
+                        <input type="number" id="top-amount" required class="w-full bg-transparent border-b border-line py-2 pl-4 text-xl font-mono text-ink outline-none focus:border-ink placeholder:text-line" placeholder="0">
                     </div>
                 </div>
                 <div><input type="text" id="top-note" class="w-full bg-transparent border-b border-line p-2 text-sm outline-none focus:border-ink placeholder:text-line" placeholder="備註..."></div>
@@ -494,22 +514,10 @@
         }
         function clearProfile() { localStorage.removeItem('om_profile'); location.reload(); }
 
+        // 改為只替換文字，不破壞 HTML 結構
         function updatePayerUI() {
-            const container = document.getElementById('payer-container');
-            container.innerHTML = `
-                <label class="flex-1 text-center cursor-pointer">
-                    <input type="radio" name="payer" value="fund" class="peer sr-only" onchange="toggleSplitOptions()">
-                    <div class="peer-checked:bg-surface peer-checked:shadow-sm peer-checked:text-ink text-mute rounded py-1.5 text-xs transition-all"><i class="ph-bold ph-bank mr-1 inline-block"></i>公積金</div>
-                </label>
-                <label class="flex-1 text-center cursor-pointer">
-                    <input type="radio" name="payer" value="me" class="peer sr-only" checked onchange="toggleSplitOptions()">
-                    <div class="peer-checked:bg-surface peer-checked:shadow-sm peer-checked:text-ink text-mute rounded py-1.5 text-xs transition-all">${userProfile.avatar} 我</div>
-                </label>
-                <label class="flex-1 text-center cursor-pointer">
-                    <input type="radio" name="payer" value="partner" class="peer sr-only" onchange="toggleSplitOptions()">
-                    <div class="peer-checked:bg-surface peer-checked:shadow-sm peer-checked:text-ink text-mute rounded py-1.5 text-xs transition-all">另一半</div>
-                </label>
-            `;
+            const meLabel = document.getElementById('payer-me-label');
+            if (meLabel) meLabel.innerHTML = `${userProfile.avatar} 我`;
         }
 
         function switchTab(tabId) {
@@ -536,6 +544,11 @@
             document.getElementById('my-share').value = '';
             document.getElementById('partner-share').value = '';
             
+            // 重置分類
+            document.getElementById('exp-category').value = 'food';
+            document.getElementById('custom-cat-wrapper').classList.add('hidden');
+            document.getElementById('exp-custom-cat').value = '';
+
             document.getElementById('exp-recurring').checked = false;
             document.getElementById('recurring-opts').classList.add('hidden');
             document.querySelectorAll('#monthly-grid input').forEach(cb => cb.checked = false);
@@ -551,6 +564,18 @@
             gsap.fromTo(modal, { backgroundColor: "rgba(251,251,250,0)" }, { backgroundColor: "rgba(251,251,250,0.8)", duration: 0.3 });
             gsap.fromTo(modal.querySelector('.modal-panel'), { opacity: 0, scale: 0.96, y: 20 }, { opacity: 1, scale: 1, y: 0, duration: 0.4, ease: "back.out(1.1)" });
         }
+
+        // 自訂分類顯示邏輯
+        window.handleCategoryChange = function() {
+            const cat = document.getElementById('exp-category').value;
+            const customWrapper = document.getElementById('custom-cat-wrapper');
+            if (cat === 'custom') {
+                customWrapper.classList.remove('hidden');
+                document.getElementById('exp-custom-cat').focus();
+            } else {
+                customWrapper.classList.add('hidden');
+            }
+        };
 
         function openTopupModal() { 
             document.getElementById('top-date').value = new Date().toISOString().split('T')[0]; 
@@ -805,24 +830,47 @@
             else { statusText.innerText = `超支 $${Math.abs(left).toLocaleString()}`; statusText.className = "text-[10px] text-[#9F2F2D] text-right font-bold"; }
         }
 
-        // --- 防呆：確認手動驗證表單 ---
+        // --- 防呆處理：手動攔截錯誤，確保不崩潰 ---
         document.getElementById('expense-form').addEventListener('submit', async function(e) {
             e.preventDefault();
             
+            // 金額防呆
             const total = parseFloat(amtInput.value);
             if (isNaN(total) || total <= 0) {
                 alert('⚠️ 記帳失敗：請點擊金額欄位，輸入正確的支出金額喔！');
                 return;
             }
 
-            const payer = document.querySelector('input[name="payer"]:checked').value;
+            // 付款來源防呆
+            const checkedPayer = document.querySelector('input[name="payer"]:checked');
+            if (!checkedPayer) {
+                alert('⚠️ 記帳失敗：請選擇付款來源！');
+                return;
+            }
+            const payer = checkedPayer.value;
             const myShare = parseFloat(myShareInput.value) || 0;
             const isRecurring = document.getElementById('exp-recurring').checked;
             
+            // 自訂分類處理
+            let categoryVal = document.getElementById('exp-category').value;
+            let finalCategory = categoryVal;
+            if (categoryVal === 'custom') {
+                finalCategory = document.getElementById('exp-custom-cat').value.trim();
+                if (!finalCategory) {
+                    alert('⚠️ 請輸入自訂分類名稱！');
+                    document.getElementById('exp-custom-cat').focus();
+                    return;
+                }
+            }
+
             let descText = document.getElementById('exp-desc').value.trim();
             if(!descText) {
-                const catSelect = document.getElementById('exp-category');
-                descText = catSelect.options[catSelect.selectedIndex].text;
+                if (categoryVal === 'custom') {
+                    descText = finalCategory;
+                } else {
+                    const catSelect = document.getElementById('exp-category');
+                    descText = catSelect.options[catSelect.selectedIndex].text;
+                }
             }
 
             let calcRatio = payer === 'fund' ? 0 : (myShare / total) * 100;
@@ -831,7 +879,7 @@
             const expenseData = {
                 id: Date.now(), type: 'expense', date: document.getElementById('exp-date').value,
                 desc: descText, amount: total, payer: payer, splitRatio: calcRatio.toFixed(2),
-                category: document.getElementById('exp-category').value, note: document.getElementById('exp-note').value,
+                category: finalCategory, note: document.getElementById('exp-note').value,
                 isSettled: false, uploader: userProfile.name, ledger: targetLedger
             };
 
@@ -877,7 +925,7 @@
             e.preventDefault();
             const isTransfer = document.getElementById('topup-transfer').checked;
             const amount = parseFloat(document.getElementById('top-amount').value);
-            if (isNaN(amount) || amount <= 0) return alert('請輸入正確金額');
+            if (isNaN(amount) || amount <= 0) return alert('請點擊輸入金額');
             
             const date = document.getElementById('top-date').value;
             const targetLedger = currentLedger === 'shared' ? 'shared' : 'personal_' + userProfile.name;
@@ -912,6 +960,9 @@
             const t = db.transactions.find(x => x.id.toString() === id.toString());
             if(!t) return;
             const s = catIcons[t.category] || catIcons['other'];
+            // 支援自訂分類顯示
+            let catLabelText = catIcons[t.category] ? catIcons[t.category].label : t.category;
+
             const content = document.getElementById('view-modal-content');
             let imgHtml = t.receiptUrl ? `<div class="mt-4 border border-line rounded overflow-hidden"><img src="${t.receiptUrl}" class="w-full h-auto object-contain bg-bone" alt="Receipt"></div>` : `<div class="mt-4 bg-bone text-mute text-[10px] text-center p-4 rounded font-mono border border-line">無照片附檔</div>`;
             
@@ -926,7 +977,7 @@
                     <div><p class="text-[10px] text-mute font-mono">${t.date}</p><h4 class="font-medium text-lg text-ink">${t.desc}</h4></div>
                 </div>
                 <div class="grid grid-cols-2 gap-4 bg-[#FBFBFA] p-4 rounded-md border border-line">
-                    <div><p class="text-[10px] text-mute font-mono mb-1">分類</p><p class="text-sm text-ink">${s.label}</p></div>
+                    <div><p class="text-[10px] text-mute font-mono mb-1">分類</p><p class="text-sm text-ink">${catLabelText}</p></div>
                     <div><p class="text-[10px] text-mute font-mono mb-1">付款來源</p><p class="text-sm text-ink">${payerText}</p></div>
                     <div><p class="text-[10px] text-mute font-mono mb-1">記錄者</p><p class="text-sm text-ink">${t.uploader || 'System'}</p></div>
                     <div><p class="text-[10px] text-mute font-mono mb-1">總金額</p><p class="text-xl font-mono text-ink">$${parseFloat(t.amount).toLocaleString()}</p></div>
@@ -1051,7 +1102,14 @@
 
             const ctxC = document.getElementById('categoryChart').getContext('2d');
             const catSums = { 'food':0, 'housing':0, 'transport':0, 'entertainment':0, 'other':0 };
-            window.currentTx.filter(t => t.type === 'expense').forEach(t => { if(catSums[t.category]!==undefined) catSums[t.category] += parseFloat(t.amount); });
+            window.currentTx.filter(t => t.type === 'expense').forEach(t => { 
+                // 若為自訂分類(不在 catSums 內)，自動歸入 'other'
+                if(catSums[t.category] !== undefined) {
+                    catSums[t.category] += parseFloat(t.amount); 
+                } else {
+                    catSums['other'] += parseFloat(t.amount);
+                }
+            });
             
             if(cChart) cChart.destroy();
             cChart = new Chart(ctxC, {

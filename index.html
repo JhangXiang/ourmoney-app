@@ -2,16 +2,14 @@
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>凱與喬的帳本</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+    <title>我們的帳本</title>
     
-    <script>
-        window.onerror = function(message, source, lineno, colno, error) {
-            alert("系統偵測到致命語法錯誤！\n\n錯誤訊息：" + message + "\n發生在第 " + lineno + " 行");
-            return true;
-        };
-    </script>
-
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/@phosphor-icons/web"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -21,23 +19,7 @@
         tailwind.config = {
             theme: {
                 extend: {
-                    colors: {
-                        ink: '#111111',
-                        mute: '#787774',
-                        bone: '#FBFBFA',
-                        surface: '#FFFFFF',
-                        line: '#EAEAEA',
-                        pale: {
-                            red: '#FDEBEC',
-                            redText: '#9F2F2D',
-                            blue: '#E1F3FE',
-                            blueText: '#1F6C9F',
-                            green: '#EDF3EC',
-                            greenText: '#346538',
-                            yellow: '#FBF3DB',
-                            yellowText: '#956400'
-                        }
-                    },
+                    colors: { ink: '#111111', mute: '#787774', bone: '#FBFBFA', surface: '#FFFFFF', line: '#EAEAEA' },
                     fontFamily: {
                         sans: ['"SF Pro Display"', '"Geist Sans"', '"Helvetica Neue"', 'sans-serif'],
                         mono: ['"Geist Mono"', '"JetBrains Mono"', 'monospace']
@@ -48,81 +30,83 @@
     </script>
 
     <style>
-        body { 
-            background-color: #FBFBFA; 
-            color: #111111;
-            -webkit-font-smoothing: antialiased;
-            -moz-osx-font-smoothing: grayscale;
-        }
+        html, body { background-color: #FBFBFA; color: #111111; overscroll-behavior-y: none; touch-action: manipulation; -webkit-tap-highlight-color: transparent; }
+        ::-webkit-scrollbar { display: none; }
         
-        /* Minimalist Scrollbar */
-        ::-webkit-scrollbar { width: 4px; height: 4px; }
-        ::-webkit-scrollbar-track { background: transparent; }
-        ::-webkit-scrollbar-thumb { background: #EAEAEA; border-radius: 4px; }
-        ::-webkit-scrollbar-thumb:hover { background: #d4d4d4; }
-
-        /* Component Overrides */
         .nav-item { color: #787774; transition: all 0.2s ease; }
         .nav-item:hover:not(.active) { color: #111111; background-color: #F7F6F3; }
         .nav-item.active { color: #111111; background-color: #F3F3F2; font-weight: 500; pointer-events: none; }
-        
         .mobile-nav-item.active { color: #111111; }
         .mobile-nav-item:not(.active) { color: #787774; }
 
-        #loading-overlay { 
-            background: rgba(251, 251, 250, 0.8); 
-            backdrop-filter: blur(8px); 
-            -webkit-backdrop-filter: blur(8px);
-        }
-
-        /* Hide number input spinners */
-        input[type="number"]::-webkit-inner-spin-button,
-        input[type="number"]::-webkit-outer-spin-button {
-            -webkit-appearance: none;
-            margin: 0;
-        }
-
+        input[type="number"]::-webkit-inner-spin-button, input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
         .no-ring:focus { outline: none; box-shadow: none; }
+        .pb-safe { padding-bottom: calc(env(safe-area-inset-bottom) + 8px); }
+        #sync-indicator { transition: opacity 0.3s; }
     </style>
 </head>
 <body class="flex flex-col md:flex-row h-screen overflow-hidden font-sans text-ink">
 
-    <div id="loading-overlay" class="fixed inset-0 z-[100] flex flex-col items-center justify-center font-medium text-ink hidden">
-        <div class="animate-spin text-2xl mb-4 text-mute"><i class="ph-bold ph-circle-notch"></i></div>
-        <div id="loading-text" class="text-xs tracking-widest font-mono uppercase text-mute">Syncing Data...</div>
+    <div id="sync-indicator" class="fixed top-2 right-2 z-[150] bg-ink text-surface text-[10px] font-mono px-2 py-1 rounded-full flex items-center gap-1.5 opacity-0 pointer-events-none">
+        <i class="ph-bold ph-arrows-clockwise animate-spin"></i> Syncing
+    </div>
+
+    <div id="auth-modal" class="fixed inset-0 bg-bone z-[200] flex flex-col justify-center items-center p-6 hidden">
+        <div class="w-full max-w-sm space-y-6">
+            <div class="text-center space-y-2">
+                <div class="w-16 h-16 bg-ink text-surface rounded-2xl mx-auto flex items-center justify-center text-3xl mb-4"><i class="ph-bold ph-hand-waving"></i></div>
+                <h2 class="text-2xl font-bold tracking-tight">歡迎使用帳本</h2>
+                <p class="text-sm text-mute">請設定你的專屬身分，以便系統記錄。</p>
+            </div>
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-xs uppercase font-mono tracking-widest text-mute mb-1.5">暱稱</label>
+                    <input type="text" id="auth-name" class="w-full bg-surface border border-line rounded-lg p-3 text-sm outline-none focus:border-ink transition-colors" placeholder="e.g. 凱">
+                </div>
+                <div>
+                    <label class="block text-xs uppercase font-mono tracking-widest text-mute mb-1.5">大頭貼 (Emoji)</label>
+                    <input type="text" id="auth-avatar" class="w-full bg-surface border border-line rounded-lg p-3 text-2xl outline-none focus:border-ink transition-colors text-center" value="🧑🏻‍💻" maxlength="2">
+                </div>
+                <button onclick="saveProfile()" class="w-full bg-ink text-surface rounded-lg p-3 font-medium hover:bg-gray-800 transition-transform active:scale-95">開始使用</button>
+            </div>
+        </div>
     </div>
 
     <aside class="hidden md:flex w-64 bg-bone border-r border-line flex-col justify-between shrink-0 z-40">
         <div class="p-6">
             <div class="flex items-center gap-3 mb-10">
-                <div class="w-7 h-7 bg-ink rounded flex items-center justify-center"><i class="ph-bold ph-bank text-surface text-xs"></i></div>
-                <div><h1 class="font-bold tracking-widest text-xs uppercase text-ink">OurMoney</h1></div>
+                <div id="sidebar-avatar" class="w-8 h-8 bg-line rounded-full flex items-center justify-center text-lg">👤</div>
+                <div>
+                    <h1 class="font-bold text-sm" id="sidebar-name">User</h1>
+                    <p class="text-[10px] font-mono text-mute uppercase">Personal Account</p>
+                </div>
             </div>
             <nav class="space-y-1">
                 <button onclick="switchTab('dashboard')" id="btn-dashboard-desk" class="nav-item active w-full flex items-center gap-3 px-4 py-2.5 rounded-md text-sm"><i class="ph-bold ph-chart-pie-slice w-5"></i> 總覽</button>
+                <button onclick="switchTab('budget')" id="btn-budget-desk" class="nav-item w-full flex items-center gap-3 px-4 py-2.5 rounded-md text-sm"><i class="ph-bold ph-target w-5"></i> 預算</button>
                 <button onclick="switchTab('calendar')" id="btn-calendar-desk" class="nav-item w-full flex items-center gap-3 px-4 py-2.5 rounded-md text-sm"><i class="ph-bold ph-list-dashes w-5"></i> 明細</button>
                 <button onclick="switchTab('todo')" id="btn-todo-desk" class="nav-item w-full flex items-center gap-3 px-4 py-2.5 rounded-md text-sm"><i class="ph-bold ph-check-square w-5"></i> 待辦</button>
             </nav>
         </div>
-        <div class="p-4 border-t border-line">
-            <button onclick="fetchData()" class="w-full text-xs text-mute hover:text-ink py-2 flex items-center justify-center gap-2 transition-colors"><i class="ph-bold ph-arrows-clockwise"></i> 同步資料</button>
+        <div class="p-4 border-t border-line space-y-2">
+            <button onclick="clearProfile()" class="w-full text-xs text-mute hover:text-red-500 py-2 flex items-center justify-center gap-2 transition-colors"><i class="ph-bold ph-sign-out"></i> 切換帳號</button>
+            <button onclick="window.location.href = window.location.pathname + '?v=' + new Date().getTime();" class="w-full text-xs text-mute hover:text-ink py-2 flex items-center justify-center gap-2 transition-colors"><i class="ph-bold ph-cloud-arrow-down"></i> 強制更新版本</button>
         </div>
     </aside>
 
-    <div class="flex-1 flex flex-col overflow-hidden relative pb-16 md:pb-0 bg-bone">
-        
+    <div class="flex-1 flex flex-col overflow-hidden relative pb-[80px] md:pb-0 bg-bone">
         <header class="h-16 bg-surface border-b border-line flex items-center justify-between px-4 md:px-8 z-10 shrink-0">
             <div class="flex items-center gap-2">
-                <span class="text-[11px] bg-bone border border-line text-mute font-mono uppercase tracking-wider px-2 py-1 rounded flex items-center gap-1.5"><i class="ph-bold ph-buildings"></i> Xinzhuang</span>
+                <div id="header-avatar" class="md:hidden w-7 h-7 bg-line rounded-full flex items-center justify-center text-sm mr-1">👤</div>
+                <span class="text-[11px] bg-bone border border-line text-mute font-mono uppercase tracking-wider px-2 py-1 rounded flex items-center gap-1.5"><i class="ph-bold ph-buildings"></i> 共用帳本</span>
             </div>
             <div class="flex items-center gap-2 md:gap-3">
-                <button onclick="openTopupModal()" class="text-ink bg-bone border border-line hover:bg-line text-xs font-medium px-3 md:px-4 py-1.5 rounded-md flex items-center gap-1.5 transition-colors"><i class="ph-bold ph-arrow-down"></i> <span class="hidden md:inline">入金</span></button>
-                <button onclick="openAddModal()" class="bg-ink text-surface hover:bg-gray-800 text-xs font-medium px-3 md:px-4 py-1.5 rounded-md flex items-center gap-1.5 transition-transform active:scale-95"><i class="ph-bold ph-plus"></i> <span class="hidden md:inline">記一筆</span></button>
+                <button onclick="openTopupModal()" class="text-ink bg-bone border border-line hover:bg-line text-xs font-medium px-3 py-1.5 rounded-md flex items-center gap-1.5 transition-colors"><i class="ph-bold ph-arrow-down"></i> <span class="hidden md:inline">入金</span></button>
+                <button onclick="openAddModal()" class="bg-ink text-surface hover:bg-gray-800 text-xs font-medium px-3 py-1.5 rounded-md flex items-center gap-1.5 transition-transform active:scale-95"><i class="ph-bold ph-plus"></i> <span class="hidden md:inline">記一筆</span></button>
             </div>
         </header>
 
         <main class="flex-1 overflow-y-auto p-4 md:p-8">
-            
             <section id="tab-dashboard" class="space-y-4 md:space-y-6 max-w-5xl mx-auto tab-content">
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6">
                     <div class="bg-surface p-6 rounded-lg border border-line flex flex-col justify-center relative overflow-hidden group">
@@ -149,37 +133,74 @@
                         <div class="flex-1 relative flex items-center justify-center min-h-[160px] md:min-h-[200px]"><canvas id="categoryChart"></canvas></div>
                     </div>
                 </div>
+
+                <div class="bg-surface p-6 rounded-lg border border-line lg:col-span-3">
+                    <h4 class="font-mono text-[10px] uppercase tracking-widest text-mute mb-4 flex items-center gap-1.5"><i class="ph-bold ph-calendar-arrow-down"></i> 設定好的固定化支出</h4>
+                    <div id="recurring-list" class="grid grid-cols-1 md:grid-cols-2 gap-3"></div>
+                </div>
+            </section>
+
+            <section id="tab-budget" class="hidden max-w-3xl mx-auto space-y-4 md:space-y-6 tab-content">
+                <div class="bg-surface p-6 rounded-lg border border-line">
+                    <div class="flex justify-between items-center mb-6">
+                        <h4 class="font-mono text-[10px] uppercase tracking-widest text-mute flex items-center gap-1.5"><i class="ph-bold ph-target"></i> 本月預算消耗</h4>
+                        <button onclick="setBudgetTarget()" class="text-[10px] text-mute border border-line px-2 py-1 rounded hover:text-ink transition-colors">設定目標</button>
+                    </div>
+                    <div class="flex justify-between items-end mb-2">
+                        <div>
+                            <p class="text-xs text-mute mb-1">已花費</p>
+                            <h3 class="text-3xl font-mono text-ink tracking-tight" id="budget-spent">$0</h3>
+                        </div>
+                        <div class="text-right">
+                            <p class="text-xs text-mute mb-1">本月目標</p>
+                            <p class="text-sm font-mono text-mute" id="budget-target">/ $20,000</p>
+                        </div>
+                    </div>
+                    <div class="w-full bg-bone border border-line rounded-full h-3 mb-2 overflow-hidden">
+                        <div id="budget-bar" class="bg-ink h-3 rounded-full transition-all duration-1000" style="width: 0%"></div>
+                    </div>
+                    <p class="text-[10px] text-mute text-right" id="budget-status-text">剩餘 $20,000</p>
+                </div>
             </section>
 
             <section id="tab-calendar" class="hidden max-w-4xl mx-auto h-full tab-content">
                 <div class="bg-surface rounded-lg border border-line h-[calc(100vh-140px)] flex flex-col">
-                    <div class="p-4 md:p-6 border-b border-line">
-                        <h4 class="font-mono text-[10px] uppercase tracking-widest text-mute flex items-center gap-1.5"><i class="ph-bold ph-clock-counter-clockwise"></i> 歷史明細</h4>
+                    <div class="p-4 md:p-6 border-b border-line flex justify-between items-center">
+                        <h4 class="font-mono text-[10px] uppercase tracking-widest text-mute flex items-center gap-1.5"><i class="ph-bold ph-clock-counter-clockwise"></i> 歷史明細 (點擊查看詳情)</h4>
                     </div>
-                    <div class="flex-1 overflow-y-auto" id="full-history-list">
-                        </div>
+                    <div class="flex-1 overflow-y-auto" id="full-history-list"></div>
                 </div>
             </section>
 
             <section id="tab-todo" class="hidden max-w-3xl mx-auto space-y-4 md:space-y-6 tab-content">
-                <div class="bg-surface p-5 md:p-6 rounded-lg border border-line">
+                <div class="bg-surface p-5 md:p-6 rounded-lg border border-line mb-4">
                     <form id="todo-form" class="flex gap-3 items-center">
                         <i class="ph-bold ph-plus text-mute"></i>
                         <input type="text" id="todo-input" required class="flex-1 bg-transparent border-none p-0 text-sm outline-none no-ring placeholder:text-line" placeholder="新增待辦或採買事項...">
                         <button type="submit" class="text-xs text-mute hover:text-ink font-medium px-2 transition-colors">Enter</button>
                     </form>
                 </div>
-                <div class="bg-surface rounded-lg border border-line overflow-hidden" id="todo-list">
-                    </div>
+                <div id="todo-list" class="space-y-4 pb-4"></div>
             </section>
         </main>
     </div>
 
-    <nav class="md:hidden fixed bottom-0 w-full bg-surface border-t border-line flex justify-around items-center h-16 z-40 px-2 pb-safe">
-        <button onclick="switchTab('dashboard')" id="btn-dashboard-mob" class="mobile-nav-item active flex flex-col items-center gap-1 w-1/3 py-2 transition-colors"><i class="ph-bold ph-chart-pie-slice text-xl"></i><span class="text-[9px] font-medium tracking-wide">總覽</span></button>
-        <button onclick="switchTab('calendar')" id="btn-calendar-mob" class="mobile-nav-item flex flex-col items-center gap-1 w-1/3 py-2 transition-colors"><i class="ph-bold ph-list-dashes text-xl"></i><span class="text-[9px] font-medium tracking-wide">明細</span></button>
-        <button onclick="switchTab('todo')" id="btn-todo-mob" class="mobile-nav-item flex flex-col items-center gap-1 w-1/3 py-2 transition-colors"><i class="ph-bold ph-check-square text-xl"></i><span class="text-[9px] font-medium tracking-wide">待辦</span></button>
+    <nav class="md:hidden fixed bottom-0 w-full bg-surface border-t border-line flex justify-around items-center h-16 z-40 px-2 pb-safe shadow-[0_-4px_15px_rgba(0,0,0,0.03)]">
+        <button onclick="switchTab('dashboard')" id="btn-dashboard-mob" class="mobile-nav-item active flex flex-col items-center gap-1 w-1/4 py-2 transition-colors"><i class="ph-bold ph-chart-pie-slice text-xl"></i><span class="text-[9px] font-medium tracking-wide">總覽</span></button>
+        <button onclick="switchTab('budget')" id="btn-budget-mob" class="mobile-nav-item flex flex-col items-center gap-1 w-1/4 py-2 transition-colors"><i class="ph-bold ph-target text-xl"></i><span class="text-[9px] font-medium tracking-wide">預算</span></button>
+        <button onclick="switchTab('calendar')" id="btn-calendar-mob" class="mobile-nav-item flex flex-col items-center gap-1 w-1/4 py-2 transition-colors"><i class="ph-bold ph-list-dashes text-xl"></i><span class="text-[9px] font-medium tracking-wide">明細</span></button>
+        <button onclick="switchTab('todo')" id="btn-todo-mob" class="mobile-nav-item flex flex-col items-center gap-1 w-1/4 py-2 transition-colors"><i class="ph-bold ph-check-square text-xl"></i><span class="text-[9px] font-medium tracking-wide">待辦</span></button>
     </nav>
+
+    <div id="view-modal" class="hidden fixed inset-0 bg-bone/80 backdrop-blur-sm z-50 flex items-end md:items-center justify-center p-0 md:p-4">
+        <div class="modal-panel bg-surface w-full max-w-sm md:rounded-xl border-t md:border border-line flex flex-col max-h-[90vh]">
+            <div class="p-4 border-b border-line flex justify-between items-center shrink-0">
+                <h3 class="text-sm font-medium text-ink flex items-center gap-2"><i class="ph-bold ph-receipt text-mute"></i> 明細詳情</h3>
+                <button type="button" onclick="closeModal('view-modal')" class="text-mute hover:text-ink p-1"><i class="ph-bold ph-x text-lg"></i></button>
+            </div>
+            <div class="p-5 overflow-y-auto space-y-4" id="view-modal-content"></div>
+        </div>
+    </div>
 
     <div id="add-modal" class="hidden fixed inset-0 bg-bone/80 backdrop-blur-sm z-50 flex items-end md:items-center justify-center p-0 md:p-4">
         <div class="modal-panel bg-surface w-full max-w-md md:rounded-xl border-t md:border border-line flex flex-col max-h-[90vh]">
@@ -187,22 +208,23 @@
                 <h3 class="text-sm font-medium text-ink flex items-center gap-2"><i class="ph-bold ph-pencil-simple text-mute"></i> 紀錄支出</h3>
                 <button type="button" onclick="closeModal('add-modal')" class="text-mute hover:text-ink transition-colors p-1"><i class="ph-bold ph-x text-lg"></i></button>
             </div>
-            <div class="overflow-y-auto p-4 md:p-6">
+            <div class="overflow-y-auto p-4 md:p-6 pb-12">
                 <form id="expense-form" class="space-y-5">
                     
-                    <div class="border border-dashed border-line rounded-md p-3 flex justify-center items-center group hover:border-mute transition-colors cursor-pointer relative">
+                    <div class="border border-dashed border-line rounded-md p-3 flex justify-center items-center group hover:border-mute transition-colors cursor-pointer relative overflow-hidden bg-bone min-h-[60px]">
                         <input type="file" accept="image/*" capture="environment" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10" id="receipt-upload">
                         <div id="file-label-container" class="flex items-center gap-2 text-xs text-mute group-hover:text-ink font-medium">
-                            <i class="ph-bold ph-camera"></i> <span id="file-label-text">附上發票或明細</span>
+                            <i class="ph-bold ph-camera"></i> <span>拍照 / 附上發票</span>
                         </div>
+                        <img id="preview-image" src="" class="hidden absolute inset-0 w-full h-full object-contain z-0">
                     </div>
 
-                    <div class="flex gap-4">
-                        <div class="flex-1">
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
                             <label class="block text-[10px] uppercase font-mono tracking-widest text-mute mb-1.5">日期</label>
                             <input type="date" id="exp-date" required class="w-full bg-bone border border-line rounded-md p-2 text-sm outline-none focus:border-ink transition-colors">
                         </div>
-                        <div class="w-1/3">
+                        <div>
                             <label class="block text-[10px] uppercase font-mono tracking-widest text-mute mb-1.5">分類</label>
                             <select id="exp-category" class="w-full bg-bone border border-line rounded-md p-2 text-sm outline-none focus:border-ink transition-colors">
                                 <option value="food">飲食</option>
@@ -215,34 +237,21 @@
                     </div>
 
                     <div>
-                        <label class="block text-[10px] uppercase font-mono tracking-widest text-mute mb-1.5">項目名稱</label>
-                        <input type="text" id="exp-desc" required class="w-full bg-transparent border-b border-line p-2 text-sm outline-none focus:border-ink placeholder:text-line transition-colors" placeholder="e.g. 採買食材">
+                        <label class="block text-[10px] uppercase font-mono tracking-widest text-mute mb-1.5">項目名稱 (選填)</label>
+                        <input type="text" id="exp-desc" class="w-full bg-transparent border-b border-line p-2 text-sm outline-none focus:border-ink placeholder:text-line transition-colors" placeholder="留白將自動填入分類名稱">
                     </div>
                     
                     <div>
                         <label class="block text-[10px] uppercase font-mono tracking-widest text-mute mb-1.5">總金額</label>
                         <div class="relative">
                             <span class="absolute left-0 top-1.5 text-mute font-mono">$</span>
-                            <input type="number" id="exp-amount" required class="w-full bg-transparent border-b border-line p-2 pl-4 text-xl font-mono text-ink outline-none focus:border-ink placeholder:text-line transition-colors" placeholder="0">
+                            <input type="text" id="exp-amount" readonly onclick="openCalculator()" required class="w-full bg-transparent border-b border-line p-2 pl-4 text-xl font-mono text-ink outline-none focus:border-ink placeholder:text-line transition-colors cursor-pointer" placeholder="點擊計算...">
                         </div>
                     </div>
                     
                     <div>
                         <label class="block text-[10px] uppercase font-mono tracking-widest text-mute mb-2">付款來源</label>
-                        <div class="flex gap-2 bg-bone p-1 rounded-md border border-line">
-                            <label class="flex-1 text-center cursor-pointer">
-                                <input type="radio" name="payer" value="fund" class="peer sr-only" onchange="toggleSplitOptions()">
-                                <div class="peer-checked:bg-surface peer-checked:shadow-sm peer-checked:text-ink text-mute rounded py-1.5 text-xs transition-all"><i class="ph-bold ph-bank mr-1 inline-block"></i>公積金</div>
-                            </label>
-                            <label class="flex-1 text-center cursor-pointer">
-                                <input type="radio" name="payer" value="me" class="peer sr-only" checked onchange="toggleSplitOptions()">
-                                <div class="peer-checked:bg-surface peer-checked:shadow-sm peer-checked:text-ink text-mute rounded py-1.5 text-xs transition-all"><i class="ph-bold ph-user mr-1 inline-block"></i>凱墊付</div>
-                            </label>
-                            <label class="flex-1 text-center cursor-pointer">
-                                <input type="radio" name="payer" value="partner" class="peer sr-only" onchange="toggleSplitOptions()">
-                                <div class="peer-checked:bg-surface peer-checked:shadow-sm peer-checked:text-ink text-mute rounded py-1.5 text-xs transition-all"><i class="ph-bold ph-user mr-1 inline-block"></i>喬墊付</div>
-                            </label>
-                        </div>
+                        <div class="flex gap-2 bg-bone p-1 rounded-md border border-line" id="payer-container"></div>
                     </div>
 
                     <div id="split-section" class="bg-bone p-4 rounded-md border border-line">
@@ -250,13 +259,12 @@
                             <label class="text-[10px] uppercase font-mono tracking-widest text-mute">分攤比例</label>
                             <div class="flex gap-2">
                                 <button type="button" onclick="setSplit(0.5)" class="text-[9px] font-mono border border-line hover:border-mute text-mute px-1.5 py-0.5 rounded transition-colors">50/50</button>
-                                <button type="button" onclick="setSplit(1)" class="text-[9px] font-mono border border-line hover:border-mute text-mute px-1.5 py-0.5 rounded transition-colors">100/0</button>
-                                <button type="button" onclick="setSplit(0)" class="text-[9px] font-mono border border-line hover:border-mute text-mute px-1.5 py-0.5 rounded transition-colors">0/100</button>
+                                <button type="button" onclick="setSplit(1)" class="text-[9px] font-mono border border-line hover:border-mute text-mute px-1.5 py-0.5 rounded transition-colors">我全出</button>
                             </div>
                         </div>
                         <div class="flex items-center gap-4">
                             <div class="flex-1">
-                                <label class="block text-[9px] text-mute mb-1">凱負擔</label>
+                                <label class="block text-[9px] text-mute mb-1">我的負擔</label>
                                 <div class="relative">
                                     <span class="absolute left-2 top-1.5 text-mute font-mono text-xs">$</span>
                                     <input type="number" id="my-share" class="w-full bg-surface border border-line rounded p-1.5 pl-5 text-sm font-mono outline-none focus:border-ink transition-colors">
@@ -264,7 +272,7 @@
                             </div>
                             <div class="text-line text-sm mt-3"><i class="ph-bold ph-plus"></i></div>
                             <div class="flex-1">
-                                <label class="block text-[9px] text-mute mb-1">喬負擔</label>
+                                <label class="block text-[9px] text-mute mb-1">另一半負擔</label>
                                 <div class="relative">
                                     <span class="absolute left-2 top-1.5 text-mute font-mono text-xs">$</span>
                                     <input type="number" id="partner-share" class="w-full bg-surface border border-line rounded p-1.5 pl-5 text-sm font-mono outline-none focus:border-ink transition-colors">
@@ -276,10 +284,71 @@
                     <div>
                         <input type="text" id="exp-note" class="w-full bg-transparent border-b border-line p-2 text-sm outline-none focus:border-ink placeholder:text-line transition-colors" placeholder="備註 (選填)...">
                     </div>
+
+                    <div class="bg-bone border border-line rounded-md p-3">
+                        <label class="flex items-center gap-2 cursor-pointer group mb-2">
+                            <input type="checkbox" id="exp-recurring" class="w-4 h-4 rounded border-line text-ink focus:ring-ink" onchange="document.getElementById('recurring-opts').classList.toggle('hidden')">
+                            <span class="text-xs font-medium text-ink">設定為自動固定支出</span>
+                        </label>
+                        <div id="recurring-opts" class="hidden mt-3 pt-3 border-t border-line space-y-3">
+                            <div>
+                                <label class="block text-[10px] text-mute mb-1">觸發頻率</label>
+                                <select id="rec-type" class="w-full bg-surface border border-line rounded p-2 text-xs" onchange="toggleRecDetails()">
+                                    <option value="monthly">每月</option>
+                                    <option value="weekly">每週</option>
+                                    <option value="daily">每日</option>
+                                </select>
+                            </div>
+                            <div id="rec-detail-weekly" class="hidden">
+                                <label class="block text-[10px] text-mute mb-1">選擇星期 (可複選)</label>
+                                <div class="flex gap-1 flex-wrap" id="weekly-checks">
+                                    <label class="flex-1 text-center border border-line rounded py-1 bg-surface text-xs cursor-pointer"><input type="checkbox" value="1" class="sr-only peer"><div class="peer-checked:bg-ink peer-checked:text-surface rounded transition-colors">一</div></label>
+                                    <label class="flex-1 text-center border border-line rounded py-1 bg-surface text-xs cursor-pointer"><input type="checkbox" value="2" class="sr-only peer"><div class="peer-checked:bg-ink peer-checked:text-surface rounded transition-colors">二</div></label>
+                                    <label class="flex-1 text-center border border-line rounded py-1 bg-surface text-xs cursor-pointer"><input type="checkbox" value="3" class="sr-only peer"><div class="peer-checked:bg-ink peer-checked:text-surface rounded transition-colors">三</div></label>
+                                    <label class="flex-1 text-center border border-line rounded py-1 bg-surface text-xs cursor-pointer"><input type="checkbox" value="4" class="sr-only peer"><div class="peer-checked:bg-ink peer-checked:text-surface rounded transition-colors">四</div></label>
+                                    <label class="flex-1 text-center border border-line rounded py-1 bg-surface text-xs cursor-pointer"><input type="checkbox" value="5" class="sr-only peer"><div class="peer-checked:bg-ink peer-checked:text-surface rounded transition-colors">五</div></label>
+                                    <label class="flex-1 text-center border border-line rounded py-1 bg-surface text-xs cursor-pointer"><input type="checkbox" value="6" class="sr-only peer"><div class="peer-checked:bg-ink peer-checked:text-surface rounded transition-colors">六</div></label>
+                                    <label class="flex-1 text-center border border-line rounded py-1 bg-surface text-xs cursor-pointer"><input type="checkbox" value="0" class="sr-only peer"><div class="peer-checked:bg-ink peer-checked:text-surface rounded transition-colors">日</div></label>
+                                </div>
+                            </div>
+                            <div id="rec-detail-monthly">
+                                <label class="block text-[10px] text-mute mb-2">選擇日期 (可複選)</label>
+                                <div class="grid grid-cols-7 gap-1" id="monthly-grid"></div>
+                            </div>
+                        </div>
+                    </div>
                     
                     <button type="submit" class="w-full bg-ink text-surface rounded-md p-3 text-sm font-medium mt-4 hover:bg-gray-800 transition-transform active:scale-[0.98]">儲存</button>
                 </form>
             </div>
+        </div>
+    </div>
+
+    <div id="calculator-sheet" class="fixed inset-x-0 bottom-0 z-[60] bg-[#FBFBFA] border-t border-line transform translate-y-full transition-transform duration-300 shadow-[0_-10px_40px_rgba(0,0,0,0.1)] pb-safe">
+        <div class="p-3 bg-surface flex justify-between items-center border-b border-line">
+            <div class="text-2xl font-mono text-ink tracking-widest px-2 overflow-x-auto whitespace-nowrap" id="calc-display">0</div>
+            <button type="button" onclick="closeCalculator()" class="text-surface bg-ink text-sm font-medium px-4 py-2 rounded-lg active:scale-95 transition-transform">確定</button>
+        </div>
+        <div class="grid grid-cols-4 gap-[1px] bg-line text-ink">
+            <button type="button" onclick="calcInput('7')" class="bg-surface py-4 text-xl font-mono active:bg-bone">7</button>
+            <button type="button" onclick="calcInput('8')" class="bg-surface py-4 text-xl font-mono active:bg-bone">8</button>
+            <button type="button" onclick="calcInput('9')" class="bg-surface py-4 text-xl font-mono active:bg-bone">9</button>
+            <button type="button" onclick="calcInput('/')" class="bg-surface py-4 text-xl font-mono text-mute active:bg-bone">÷</button>
+            
+            <button type="button" onclick="calcInput('4')" class="bg-surface py-4 text-xl font-mono active:bg-bone">4</button>
+            <button type="button" onclick="calcInput('5')" class="bg-surface py-4 text-xl font-mono active:bg-bone">5</button>
+            <button type="button" onclick="calcInput('6')" class="bg-surface py-4 text-xl font-mono active:bg-bone">6</button>
+            <button type="button" onclick="calcInput('*')" class="bg-surface py-4 text-xl font-mono text-mute active:bg-bone">×</button>
+            
+            <button type="button" onclick="calcInput('1')" class="bg-surface py-4 text-xl font-mono active:bg-bone">1</button>
+            <button type="button" onclick="calcInput('2')" class="bg-surface py-4 text-xl font-mono active:bg-bone">2</button>
+            <button type="button" onclick="calcInput('3')" class="bg-surface py-4 text-xl font-mono active:bg-bone">3</button>
+            <button type="button" onclick="calcInput('-')" class="bg-surface py-4 text-xl font-mono text-mute active:bg-bone">−</button>
+            
+            <button type="button" onclick="calcInput('C')" class="bg-surface py-4 text-xl font-mono text-[#9F2F2D] active:bg-bone">C</button>
+            <button type="button" onclick="calcInput('0')" class="bg-surface py-4 text-xl font-mono active:bg-bone">0</button>
+            <button type="button" onclick="calcInput('=')" class="bg-surface py-4 text-xl font-mono text-[#1F6C9F] active:bg-bone">=</button>
+            <button type="button" onclick="calcInput('+')" class="bg-surface py-4 text-xl font-mono text-mute active:bg-bone">+</button>
         </div>
     </div>
 
@@ -310,90 +379,163 @@
     <script>
         const GAS_API_URL = "https://script.google.com/macros/s/AKfycbyxlgzLPXDS5Ojm_KoL__0szE2PFeYT6t9CPgpRVM2g6exzVGuGWbI7HM_GpIL0L_r5nw/exec";
 
-        let db = { transactions: [], todos: [] };
+        let db = { transactions: [], todos: [], recurring_rules: [] };
+        let userProfile = { name: '', avatar: '' };
         
-        // Minimalist UI Category config
         const catIcons = {
-            'food': { icon: 'ph-fork-knife', color: 'text-ink', bg: 'bg-[#F3F3F2]' },
-            'housing': { icon: 'ph-house', color: 'text-ink', bg: 'bg-[#F3F3F2]' },
-            'transport': { icon: 'ph-car', color: 'text-ink', bg: 'bg-[#F3F3F2]' },
-            'entertainment': { icon: 'ph-game-controller', color: 'text-ink', bg: 'bg-[#F3F3F2]' },
-            'other': { icon: 'ph-package', color: 'text-ink', bg: 'bg-[#F3F3F2]' },
-            'topup': { icon: 'ph-arrow-down', color: 'text-[#346538]', bg: 'bg-[#EDF3EC]' }
+            'food': { icon: 'ph-fork-knife', color: 'text-ink', bg: 'bg-[#F3F3F2]', label: '飲食' },
+            'housing': { icon: 'ph-house', color: 'text-ink', bg: 'bg-[#F3F3F2]', label: '居住' },
+            'transport': { icon: 'ph-car', color: 'text-ink', bg: 'bg-[#F3F3F2]', label: '交通' },
+            'entertainment': { icon: 'ph-game-controller', color: 'text-ink', bg: 'bg-[#F3F3F2]', label: '娛樂' },
+            'other': { icon: 'ph-package', color: 'text-ink', bg: 'bg-[#F3F3F2]', label: '其他' },
+            'topup': { icon: 'ph-arrow-down', color: 'text-[#346538]', bg: 'bg-[#EDF3EC]', label: '入金' }
         };
         let tChart = null, cChart = null;
 
-        // UI & Modal 控制 (Added GSAP Animations)
+        function initMonthlyGrid() {
+            let gridHtml = '';
+            for(let i=1; i<=31; i++) {
+                gridHtml += `<label class="text-center border border-line rounded py-1.5 bg-surface text-xs cursor-pointer"><input type="checkbox" value="${i}" class="sr-only peer"><div class="peer-checked:bg-ink peer-checked:text-surface rounded h-full flex items-center justify-center transition-colors">${i}</div></label>`;
+            }
+            document.getElementById('monthly-grid').innerHTML = gridHtml;
+        }
+
+        let calcExpression = '';
+        function openCalculator() {
+            document.getElementById('calculator-sheet').style.transform = 'translateY(0)';
+            calcExpression = document.getElementById('exp-amount').value || '';
+            updateCalcDisplay();
+        }
+        function closeCalculator() {
+            calcEvaluate();
+            document.getElementById('calculator-sheet').style.transform = 'translateY(100%)';
+            document.getElementById('exp-amount').dispatchEvent(new Event('input')); 
+        }
+        function calcInput(val) {
+            if(val === 'C') { calcExpression = ''; }
+            else if(val === '=') { calcEvaluate(); }
+            else { calcExpression += val; }
+            updateCalcDisplay();
+        }
+        function calcEvaluate() {
+            try {
+                if(calcExpression) {
+                    let res = new Function('return ' + calcExpression)();
+                    calcExpression = Math.round(res).toString();
+                }
+            } catch(e) { calcExpression = ''; }
+            updateCalcDisplay();
+        }
+        function updateCalcDisplay() {
+            document.getElementById('calc-display').innerText = calcExpression || '0';
+            document.getElementById('exp-amount').value = calcExpression;
+        }
+
+        function checkProfile() {
+            const saved = localStorage.getItem('om_profile');
+            if(saved) {
+                userProfile = JSON.parse(saved);
+                document.getElementById('sidebar-name').innerText = userProfile.name;
+                document.getElementById('sidebar-avatar').innerText = userProfile.avatar;
+                document.getElementById('header-avatar').innerText = userProfile.avatar;
+                updatePayerUI();
+            } else {
+                document.getElementById('auth-modal').classList.remove('hidden');
+            }
+        }
+        function saveProfile() {
+            const name = document.getElementById('auth-name').value || '使用者';
+            const avatar = document.getElementById('auth-avatar').value || '🧑🏻‍💻';
+            userProfile = { name, avatar };
+            localStorage.setItem('om_profile', JSON.stringify(userProfile));
+            document.getElementById('auth-modal').classList.add('hidden');
+            checkProfile();
+        }
+        function clearProfile() { localStorage.removeItem('om_profile'); location.reload(); }
+
+        function updatePayerUI() {
+            const container = document.getElementById('payer-container');
+            container.innerHTML = `
+                <label class="flex-1 text-center cursor-pointer">
+                    <input type="radio" name="payer" value="fund" class="peer sr-only" onchange="toggleSplitOptions()">
+                    <div class="peer-checked:bg-surface peer-checked:shadow-sm peer-checked:text-ink text-mute rounded py-1.5 text-xs transition-all"><i class="ph-bold ph-bank mr-1 inline-block"></i>公積金</div>
+                </label>
+                <label class="flex-1 text-center cursor-pointer">
+                    <input type="radio" name="payer" value="me" class="peer sr-only" checked onchange="toggleSplitOptions()">
+                    <div class="peer-checked:bg-surface peer-checked:shadow-sm peer-checked:text-ink text-mute rounded py-1.5 text-xs transition-all">${userProfile.avatar} 我墊付</div>
+                </label>
+                <label class="flex-1 text-center cursor-pointer">
+                    <input type="radio" name="payer" value="partner" class="peer sr-only" onchange="toggleSplitOptions()">
+                    <div class="peer-checked:bg-surface peer-checked:shadow-sm peer-checked:text-ink text-mute rounded py-1.5 text-xs transition-all">另一半墊付</div>
+                </label>
+            `;
+        }
+
         function switchTab(tabId) {
-            ['dashboard', 'calendar', 'todo'].forEach(t => {
+            ['dashboard', 'budget', 'calendar', 'todo'].forEach(t => {
                 document.getElementById(`tab-${t}`).classList.add('hidden');
-                document.getElementById(`btn-${t}-desk`).classList.remove('active');
-                document.getElementById(`btn-${t}-mob`).classList.remove('active');
+                if(document.getElementById(`btn-${t}-desk`)) document.getElementById(`btn-${t}-desk`).classList.remove('active');
+                if(document.getElementById(`btn-${t}-mob`)) document.getElementById(`btn-${t}-mob`).classList.remove('active');
             });
-            
             const targetTab = document.getElementById(`tab-${tabId}`);
             targetTab.classList.remove('hidden');
-            
-            // GSAP Tab Reveal
-            gsap.fromTo(targetTab, 
-                { opacity: 0, y: 8 }, 
-                { opacity: 1, y: 0, duration: 0.4, ease: "power2.out" }
-            );
-
-            document.getElementById(`btn-${tabId}-desk`).classList.add('active');
-            document.getElementById(`btn-${tabId}-mob`).classList.add('active');
+            gsap.fromTo(targetTab, { opacity: 0, y: 8 }, { opacity: 1, y: 0, duration: 0.4, ease: "power2.out" });
+            if(document.getElementById(`btn-${tabId}-desk`)) document.getElementById(`btn-${tabId}-desk`).classList.add('active');
+            if(document.getElementById(`btn-${tabId}-mob`)) document.getElementById(`btn-${tabId}-mob`).classList.add('active');
             if(tabId === 'dashboard') setTimeout(renderCharts, 50);
+            if(tabId === 'budget') setTimeout(renderBudget, 50);
         }
 
         function openAddModal() {
             document.getElementById('exp-date').value = new Date().toISOString().split('T')[0];
             document.getElementById('exp-amount').value = '';
+            calcExpression = '';
+            document.getElementById('calc-display').innerText = '0';
+            document.getElementById('exp-desc').value = ''; 
             document.getElementById('my-share').value = '';
             document.getElementById('partner-share').value = '';
-            document.getElementById('receipt-upload').value = '';
-            document.getElementById('file-label-text').innerText = "附上發票或明細";
-            document.getElementById('file-label-text').classList.remove('text-ink');
-            toggleSplitOptions();
             
+            document.getElementById('exp-recurring').checked = false;
+            document.getElementById('recurring-opts').classList.add('hidden');
+            document.querySelectorAll('#monthly-grid input').forEach(cb => cb.checked = false);
+            
+            document.getElementById('receipt-upload').value = '';
+            document.getElementById('preview-image').src = '';
+            document.getElementById('preview-image').classList.add('hidden');
+            document.getElementById('file-label-container').classList.remove('hidden');
+            
+            toggleSplitOptions();
             const modal = document.getElementById('add-modal');
             modal.classList.remove('hidden');
-            
-            // GSAP Modal Pop
             gsap.fromTo(modal, { backgroundColor: "rgba(251,251,250,0)" }, { backgroundColor: "rgba(251,251,250,0.8)", duration: 0.3 });
-            gsap.fromTo(modal.querySelector('.modal-panel'), 
-                { opacity: 0, scale: 0.96, y: 20 }, 
-                { opacity: 1, scale: 1, y: 0, duration: 0.4, ease: "back.out(1.1)" }
-            );
+            gsap.fromTo(modal.querySelector('.modal-panel'), { opacity: 0, scale: 0.96, y: 20 }, { opacity: 1, scale: 1, y: 0, duration: 0.4, ease: "back.out(1.1)" });
         }
 
         function openTopupModal() { 
             document.getElementById('top-date').value = new Date().toISOString().split('T')[0]; 
             const modal = document.getElementById('topup-modal');
             modal.classList.remove('hidden');
-            
             gsap.fromTo(modal, { backgroundColor: "rgba(251,251,250,0)" }, { backgroundColor: "rgba(251,251,250,0.8)", duration: 0.3 });
-            gsap.fromTo(modal.querySelector('.modal-panel'), 
-                { opacity: 0, scale: 0.96, y: 20 }, 
-                { opacity: 1, scale: 1, y: 0, duration: 0.4, ease: "back.out(1.1)" }
-            );
+            gsap.fromTo(modal.querySelector('.modal-panel'), { opacity: 0, scale: 0.96, y: 20 }, { opacity: 1, scale: 1, y: 0, duration: 0.4, ease: "back.out(1.1)" });
         }
 
         function closeModal(id) { 
             const modal = document.getElementById(id);
             gsap.to(modal.querySelector('.modal-panel'), { opacity: 0, scale: 0.98, y: 10, duration: 0.2 });
-            gsap.to(modal, { backgroundColor: "rgba(251,251,250,0)", duration: 0.2, onComplete: () => {
-                modal.classList.add('hidden');
-            }});
+            gsap.to(modal, { backgroundColor: "rgba(251,251,250,0)", duration: 0.2, onComplete: () => { modal.classList.add('hidden'); }});
         }
 
         document.getElementById('receipt-upload').addEventListener('change', (e) => {
-            const labelText = document.getElementById('file-label-text');
-            if (e.target.files.length > 0) {
-                labelText.innerText = "已選取圖片";
-                labelText.classList.add('text-ink');
-            } else {
-                labelText.innerText = "附上發票或明細";
-                labelText.classList.remove('text-ink');
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(evt) {
+                    const img = document.getElementById('preview-image');
+                    img.src = evt.target.result;
+                    img.classList.remove('hidden');
+                    document.getElementById('file-label-container').classList.add('hidden');
+                }
+                reader.readAsDataURL(file);
             }
         });
 
@@ -406,7 +548,12 @@
             });
         }
 
-        // 動態分攤邏輯
+        function toggleRecDetails() {
+            const type = document.getElementById('rec-type').value;
+            document.getElementById('rec-detail-weekly').classList.toggle('hidden', type !== 'weekly');
+            document.getElementById('rec-detail-monthly').classList.toggle('hidden', type !== 'monthly');
+        }
+
         const amtInput = document.getElementById('exp-amount');
         const myShareInput = document.getElementById('my-share');
         const partnerShareInput = document.getElementById('partner-share');
@@ -418,47 +565,46 @@
         function setSplit(ratio) { const total = parseFloat(amtInput.value) || 0; myShareInput.value = total * ratio; partnerShareInput.value = total - (total * ratio); }
         function toggleSplitOptions() { document.getElementById('split-section').classList.toggle('hidden', document.querySelector('input[name="payer"]:checked').value === 'fund'); }
 
-        // --- 防呆連線邏輯 ---
-        function showLoading(msg = "Syncing...") { 
-            document.getElementById('loading-text').innerText = msg;
-            const overlay = document.getElementById('loading-overlay');
-            overlay.classList.remove('hidden');
-            gsap.fromTo(overlay, { opacity: 0 }, { opacity: 1, duration: 0.2 });
-        }
-        function hideLoading() { 
-            const overlay = document.getElementById('loading-overlay');
-            gsap.to(overlay, { opacity: 0, duration: 0.2, onComplete: () => overlay.classList.add('hidden') });
-        }
+        function startSync() { document.getElementById('sync-indicator').classList.remove('opacity-0'); }
+        function stopSync() { document.getElementById('sync-indicator').classList.add('opacity-0'); }
 
-        async function fetchData() {
-            showLoading("Syncing latest data...");
+        async function initLoad() {
+            initMonthlyGrid(); 
+            checkProfile();
+            const cached = localStorage.getItem('om_db');
+            if (cached) { db = JSON.parse(cached); updateCoreUI(); }
+            
+            startSync();
             try { 
                 let res = await fetch(GAS_API_URL); 
                 let rawText = await res.text();
-                try {
-                    db = JSON.parse(rawText);
-                } catch (jsonErr) {
-                    throw new Error("API 未回傳正確的 JSON 資料。\n請確定有正確發佈 Apps Script。");
-                }
+                db = JSON.parse(rawText);
+                localStorage.setItem('om_db', rawText);
                 updateCoreUI(); 
-            } 
-            catch (err) { 
-                alert("讀取失敗：\n\n" + err.message); 
-            } 
-            finally { hideLoading(); }
+            } catch (err) { console.error("背景更新失敗", err); } 
+            finally { stopSync(); }
         }
 
-        async function sendPostAction(action, dataObj, extraParams = {}) {
-            showLoading("Committing changes...");
+        async function optimisticSendPost(action, dataObj, extraParams = {}) {
+            if(action === "addTransaction") { db.transactions.push(dataObj); }
+            else if(action === "addTodo") { db.todos.push({id: dataObj.id, text: dataObj.text, completed: false}); }
+            else if(action === "deleteTransaction") { db.transactions = db.transactions.filter(t => t.id.toString() !== dataObj.id.toString()); }
+            else if(action === "deleteTodo") { db.todos = db.todos.filter(t => t.id.toString() !== dataObj.id.toString()); }
+            else if(action === "deleteRecurringRule") { db.recurring_rules = db.recurring_rules.filter(r => r.id.toString() !== dataObj.id.toString()); }
+            else if(action === "archive") { db.transactions.forEach(t => { if(t.type === 'expense' && t.payer !== 'fund') t.isSettled = true; }); }
+            
+            updateCoreUI();
+            startSync();
+
             try {
                 let res = await fetch(GAS_API_URL, { method: "POST", body: JSON.stringify(Object.assign({ action, data: dataObj }, extraParams)) });
                 let result = await res.json();
-                if(result.status === "error") throw new Error(result.message);
-                await fetchData();
-            } catch (err) { 
-                alert("寫入失敗：\n\n" + err.message); 
-                hideLoading();
-            }
+                if(result.status !== "success") throw new Error(result.message || "Sync Failed");
+                localStorage.setItem('om_db', JSON.stringify(db));
+            } catch (err) {
+                alert("寫入雲端失敗，已退回伺服器狀態。請確認網路連線。");
+                initLoad(); 
+            } finally { stopSync(); }
         }
 
         function updateCoreUI() {
@@ -472,7 +618,7 @@
                 if (t.type === 'topup') fundBalance += amt;
                 else if (t.type === 'expense') {
                     if (t.payer === 'fund') fundBalance -= amt;
-                    else if (!t.isSettled) {
+                    else if (t.isSettled === false || t.isSettled === "FALSE" || t.isSettled === "") {
                         let myShare = amt * myRatio;
                         let partnerShare = amt - myShare;
                         if (t.payer === 'me') myPersonalDebt += partnerShare;
@@ -481,34 +627,100 @@
                 }
             });
 
-            // GSAP value counter
             const balanceEl = document.getElementById('dash-fund-balance');
-            gsap.to(balanceEl, { innerHTML: fundBalance, duration: 0.8, snap: "innerHTML", onUpdate: function() {
-                balanceEl.innerHTML = `$${Number(balanceEl.innerHTML).toLocaleString()}`;
-            }});
+            balanceEl.innerHTML = `$${Number(fundBalance).toLocaleString()}`;
 
             const sTitle = document.getElementById('settle-title');
             const sDesc = document.getElementById('settle-desc');
             
             if (myPersonalDebt === 0) { 
-                sTitle.innerText = "代墊狀態"; 
-                sDesc.innerText = "互不相欠"; 
+                sTitle.innerText = "代墊狀態"; sDesc.innerText = "互不相欠"; 
                 sDesc.className = "text-2xl md:text-3xl font-mono tracking-tight text-mute";
             }
             else if (myPersonalDebt > 0) { 
-                sTitle.innerText = "喬須給凱"; 
-                sDesc.innerText = `$${myPersonalDebt.toLocaleString()}`; 
-                sDesc.className = "text-2xl md:text-3xl font-mono tracking-tight text-[#9F2F2D]"; // Pale red text
+                sTitle.innerText = "另一半須給你"; sDesc.innerText = `$${myPersonalDebt.toLocaleString()}`; 
+                sDesc.className = "text-2xl md:text-3xl font-mono tracking-tight text-[#9F2F2D]"; 
             }
             else { 
-                sTitle.innerText = "凱須給喬"; 
-                sDesc.innerText = `$${Math.abs(myPersonalDebt).toLocaleString()}`; 
-                sDesc.className = "text-2xl md:text-3xl font-mono tracking-tight text-[#1F6C9F]"; // Pale blue text
+                sTitle.innerText = "你須給另一半"; sDesc.innerText = `$${Math.abs(myPersonalDebt).toLocaleString()}`; 
+                sDesc.className = "text-2xl md:text-3xl font-mono tracking-tight text-[#1F6C9F]"; 
             }
 
             renderHistoryList();
             renderTodos();
             renderCharts();
+            renderBudget();
+            renderRecurringList();
+        }
+
+        function renderRecurringList() {
+            const list = document.getElementById('recurring-list');
+            list.innerHTML = '';
+            if(!db.recurring_rules || db.recurring_rules.length === 0) {
+                list.innerHTML = '<div class="text-xs text-mute col-span-2">目前沒有設定自動固定支出。</div>';
+                return;
+            }
+            
+            db.recurring_rules.forEach(r => {
+                let ruleText = "未定";
+                if (r.rule) {
+                    if (r.rule.startsWith('monthly_')) ruleText = `每月 ${r.rule.split('_')[1]} 號`;
+                    else if (r.rule.startsWith('weekly_')) ruleText = `每週 ${r.rule.split('_')[1].split(',').map(d=>['日','一','二','三','四','五','六'][d]).join(', ')}`;
+                    else if (r.rule === 'daily') ruleText = '每日';
+                }
+                
+                list.insertAdjacentHTML('beforeend', `
+                    <div class="flex justify-between items-center p-3 border border-line rounded-md bg-[#FBFBFA]">
+                        <div class="flex items-center gap-3">
+                            <div class="w-8 h-8 rounded bg-line flex items-center justify-center text-mute"><i class="ph-bold ph-repeat"></i></div>
+                            <div>
+                                <p class="text-sm font-medium text-ink">${r.desc}</p>
+                                <p class="text-[10px] font-mono text-mute mt-0.5">${ruleText}</p>
+                            </div>
+                        </div>
+                        <div class="flex flex-col items-end gap-1">
+                            <div class="font-mono text-sm text-ink">$${parseFloat(r.amount).toLocaleString()}</div>
+                            <button onclick="deleteRecurring(${r.id})" class="text-[10px] text-mute hover:text-[#9F2F2D]"><i class="ph-bold ph-trash"></i> 移除</button>
+                        </div>
+                    </div>
+                `);
+            });
+        }
+
+        function deleteRecurring(id) {
+            if(confirm('確定要移除這項固定支出設定嗎？')) {
+                optimisticSendPost("deleteRecurringRule", { id: id });
+            }
+        }
+
+        function setBudgetTarget() {
+            let target = prompt("請輸入本月預算目標金額 (數字)：", localStorage.getItem('monthly_budget') || 20000);
+            if(target && !isNaN(target)) { localStorage.setItem('monthly_budget', parseInt(target)); renderBudget(); }
+        }
+
+        function renderBudget() {
+            if(document.getElementById('tab-budget').classList.contains('hidden')) return;
+            const target = parseInt(localStorage.getItem('monthly_budget')) || 20000;
+            const currentMonth = new Date().getMonth();
+            let spentThisMonth = 0;
+            db.transactions.forEach(t => { if (t.type === 'expense' && new Date(t.date).getMonth() === currentMonth) spentThisMonth += parseFloat(t.amount); });
+
+            let percentage = (spentThisMonth / target) * 100;
+            if(percentage > 100) percentage = 100;
+
+            document.getElementById('budget-spent').innerHTML = `$${Number(spentThisMonth).toLocaleString()}`;
+            document.getElementById('budget-target').innerText = `/ $${target.toLocaleString()}`;
+            
+            const bar = document.getElementById('budget-bar');
+            bar.style.width = percentage + '%';
+            if (percentage >= 90) bar.className = "bg-[#9F2F2D] h-3 rounded-full transition-all duration-1000";
+            else if (percentage >= 70) bar.className = "bg-[#956400] h-3 rounded-full transition-all duration-1000";
+            else bar.className = "bg-ink h-3 rounded-full transition-all duration-1000";
+
+            let left = target - spentThisMonth;
+            const statusText = document.getElementById('budget-status-text');
+            if(left >= 0) { statusText.innerText = `剩餘 $${left.toLocaleString()}`; statusText.className = "text-[10px] text-mute text-right"; }
+            else { statusText.innerText = `超支 $${Math.abs(left).toLocaleString()}`; statusText.className = "text-[10px] text-[#9F2F2D] text-right font-bold"; }
         }
 
         document.getElementById('expense-form').addEventListener('submit', async function(e) {
@@ -516,15 +728,38 @@
             const payer = document.querySelector('input[name="payer"]:checked').value;
             const total = parseFloat(amtInput.value);
             const myShare = parseFloat(myShareInput.value) || 0;
+            const isRecurring = document.getElementById('exp-recurring').checked;
+            
+            let descText = document.getElementById('exp-desc').value.trim();
+            if(!descText) {
+                const catSelect = document.getElementById('exp-category');
+                descText = catSelect.options[catSelect.selectedIndex].text;
+            }
+
             let calcRatio = payer === 'fund' ? 0 : (myShare / total) * 100;
 
             const expenseData = {
                 id: Date.now(), type: 'expense', date: document.getElementById('exp-date').value,
-                desc: document.getElementById('exp-desc').value, amount: total,
-                payer: payer, splitRatio: calcRatio.toFixed(2),
+                desc: descText, amount: total, payer: payer, splitRatio: calcRatio.toFixed(2),
                 category: document.getElementById('exp-category').value, note: document.getElementById('exp-note').value,
-                isSettled: false
+                isSettled: false, uploader: userProfile.name
             };
+
+            if(isRecurring) {
+                let ruleStr = "monthly_" + new Date(expenseData.date).getDate();
+                const rType = document.getElementById('rec-type').value;
+                if(rType === 'daily') ruleStr = "daily";
+                if(rType === 'weekly') {
+                    let wDays = Array.from(document.querySelectorAll('#weekly-checks input:checked')).map(cb => cb.value).join(',');
+                    ruleStr = wDays ? `weekly_${wDays}` : `weekly_${new Date().getDay()}`;
+                }
+                if(rType === 'monthly') {
+                    let mDays = Array.from(document.querySelectorAll('#monthly-grid input:checked')).map(cb => cb.value).join(',');
+                    ruleStr = mDays ? `monthly_${mDays}` : `monthly_${new Date().getDate()}`;
+                }
+                const recurringData = Object.assign({}, expenseData, { rule: ruleStr });
+                optimisticSendPost("addRecurringRule", recurringData);
+            }
 
             let imageData = null;
             const fileInput = document.getElementById('receipt-upload');
@@ -536,38 +771,72 @@
             }
 
             closeModal('add-modal');
-            sendPostAction("addTransaction", expenseData, { imageData: imageData });
+            
+            if(imageData) {
+                startSync();
+                document.getElementById('sync-indicator').innerHTML = '<i class="ph-bold ph-circle-notch animate-spin"></i> Uploading...';
+                await fetch(GAS_API_URL, { method: "POST", body: JSON.stringify({ action: "addTransaction", data: expenseData, imageData: imageData }) });
+                document.getElementById('sync-indicator').innerHTML = '<i class="ph-bold ph-arrows-clockwise animate-spin"></i> Syncing';
+                initLoad();
+            } else {
+                optimisticSendPost("addTransaction", expenseData);
+            }
         });
 
         document.getElementById('topup-form').addEventListener('submit', function(e) {
             e.preventDefault();
-            sendPostAction("addTransaction", {
-                id: Date.now(), type: 'topup', date: document.getElementById('top-date').value,
-                desc: '存入公積金', amount: parseFloat(document.getElementById('top-amount').value),
-                category: 'topup', note: document.getElementById('top-note').value
-            });
+            const data = { id: Date.now(), type: 'topup', date: document.getElementById('top-date').value, desc: '存入公積金', amount: parseFloat(document.getElementById('top-amount').value), category: 'topup', note: document.getElementById('top-note').value };
             closeModal('topup-modal');
+            optimisticSendPost("addTransaction", data);
         });
 
-        function deleteTx(id) { if(confirm('確定刪除這筆紀錄？')) sendPostAction("deleteTransaction", null, { id }); }
-        function archiveSettlement() { if(confirm('確認將目前的代墊結清歸零嗎？')) sendPostAction("archive", null); }
+        function deleteTx(id) { if(confirm('確定刪除這筆紀錄？')) optimisticSendPost("deleteTransaction", { id: id }); }
+        function archiveSettlement() { if(confirm('確認結清？')) optimisticSendPost("archive", null); }
+
+        window.showTxDetails = function(id) {
+            const t = db.transactions.find(x => x.id.toString() === id.toString());
+            if(!t) return;
+            const s = catIcons[t.category] || catIcons['other'];
+            const content = document.getElementById('view-modal-content');
+            let imgHtml = t.receiptUrl ? `<div class="mt-4 border border-line rounded overflow-hidden"><img src="${t.receiptUrl}" class="w-full h-auto object-contain bg-bone" alt="Receipt"></div>` : `<div class="mt-4 bg-bone text-mute text-[10px] text-center p-4 rounded font-mono border border-line">無照片附檔</div>`;
+            
+            let payerText = '公積金';
+            if (t.payer === 'me') payerText = (t.uploader) ? `${t.uploader} 墊付` : '上傳者墊付';
+            if (t.payer === 'partner') payerText = '另一半墊付';
+            
+            content.innerHTML = `
+                <div class="flex items-center gap-3 mb-4">
+                    <div class="w-10 h-10 rounded ${s.bg} ${s.color} flex items-center justify-center text-lg shrink-0"><i class="ph-bold ${s.icon}"></i></div>
+                    <div><p class="text-[10px] text-mute font-mono">${t.date}</p><h4 class="font-medium text-lg text-ink">${t.desc}</h4></div>
+                </div>
+                <div class="grid grid-cols-2 gap-4 bg-[#FBFBFA] p-4 rounded-md border border-line">
+                    <div><p class="text-[10px] text-mute font-mono mb-1">分類</p><p class="text-sm text-ink">${s.label}</p></div>
+                    <div><p class="text-[10px] text-mute font-mono mb-1">付款來源</p><p class="text-sm text-ink">${payerText}</p></div>
+                    <div><p class="text-[10px] text-mute font-mono mb-1">記錄者</p><p class="text-sm text-ink">${t.uploader || 'System'}</p></div>
+                    <div><p class="text-[10px] text-mute font-mono mb-1">總金額</p><p class="text-xl font-mono text-ink">$${parseFloat(t.amount).toLocaleString()}</p></div>
+                </div>
+                ${t.note ? `<div class="text-sm text-mute border-l-2 border-line pl-3 my-2">${t.note}</div>` : ''}
+                ${imgHtml}
+            `;
+            const modal = document.getElementById('view-modal');
+            modal.classList.remove('hidden');
+            gsap.fromTo(modal, { backgroundColor: "rgba(251,251,250,0)" }, { backgroundColor: "rgba(251,251,250,0.8)", duration: 0.3 });
+            gsap.fromTo(modal.querySelector('.modal-panel'), { opacity: 0, scale: 0.96, y: 20 }, { opacity: 1, scale: 1, y: 0, duration: 0.4, ease: "back.out(1.1)" });
+        };
 
         function renderHistoryList() {
             const list = document.getElementById('full-history-list');
             list.innerHTML = '';
-            
             db.transactions.forEach(t => {
                 const s = catIcons[t.category] || catIcons['other'];
-                
-                // Minimalist Tags
+                let payerDisplay = t.payer === 'me' ? (t.uploader || '我') : (t.payer === 'partner' ? '另一半' : '公積金');
                 let tag = t.type==='topup' ? `<span class="text-[9px] font-mono tracking-widest uppercase bg-[#EDF3EC] text-[#346538] px-1.5 py-0.5 rounded">入金</span>` : 
                           (t.payer==='fund' ? `<span class="text-[9px] font-mono tracking-widest uppercase bg-line text-mute px-1.5 py-0.5 rounded">公積金</span>` : 
-                          `<span class="text-[9px] font-mono tracking-widest uppercase bg-[#E1F3FE] text-[#1F6C9F] px-1.5 py-0.5 rounded">${t.payer==='me'?'凱墊付':'喬墊付'}</span>`);
-                
-                let imgIcon = t.receiptUrl ? `<a href="${t.receiptUrl}" target="_blank" class="text-mute hover:text-ink ml-2"><i class="ph-bold ph-image"></i></a>` : '';
+                          `<span class="text-[9px] font-mono tracking-widest uppercase bg-[#E1F3FE] text-[#1F6C9F] px-1.5 py-0.5 rounded">${payerDisplay}墊付</span>`);
+                let imgIcon = t.receiptUrl ? `<i class="ph-bold ph-image text-mute ml-2"></i>` : '';
 
                 list.insertAdjacentHTML('beforeend', `
-                    <div class="history-item p-4 border-b border-line flex justify-between items-center group hover:bg-[#FBFBFA] transition-colors">
+                    <div class="history-item p-4 border-b border-line flex justify-between items-center group hover:bg-[#FBFBFA] transition-colors cursor-pointer" onclick="showTxDetails(${t.id})">
                         <div class="flex gap-4 items-center">
                             <div class="w-9 h-9 rounded ${s.bg} ${s.color} flex items-center justify-center text-sm shrink-0"><i class="ph-bold ${s.icon}"></i></div>
                             <div>
@@ -577,94 +846,88 @@
                         </div>
                         <div class="flex items-center gap-4">
                             <div class="font-mono text-sm ${t.type==='topup'?'text-[#346538]':'text-ink'}">$${parseFloat(t.amount).toLocaleString()}</div>
-                            <button onclick="deleteTx(${t.id})" class="text-mute hover:text-[#9F2F2D] p-1 md:opacity-0 md:group-hover:opacity-100 transition-opacity"><i class="ph-bold ph-trash text-xs"></i></button>
+                            <button onclick="event.stopPropagation(); deleteTx(${t.id})" class="text-mute hover:text-[#9F2F2D] p-1 md:opacity-0 md:group-hover:opacity-100 transition-opacity"><i class="ph-bold ph-trash text-xs"></i></button>
                         </div>
                     </div>
                 `);
             });
-
-            // GSAP stagger effect
-            if (document.getElementById('tab-calendar').classList.contains('hidden') === false) {
-                gsap.fromTo(".history-item", { opacity: 0, y: 4 }, { opacity: 1, y: 0, stagger: 0.02, duration: 0.3 });
-            }
         }
 
         document.getElementById('todo-form').addEventListener('submit', function(e) {
             e.preventDefault();
-            sendPostAction("addTodo", { id: Date.now(), text: document.getElementById('todo-input').value });
+            optimisticSendPost("addTodo", { id: Date.now(), text: document.getElementById('todo-input').value });
             document.getElementById('todo-input').value = '';
         });
-        
-        function toggleTodo(id, cur) { sendPostAction("toggleTodo", null, { id, completed: !cur }); }
-        function deleteTodo(id) { sendPostAction("deleteTodo", null, { id }); }
-        function convertTodo(id, text) { openAddModal(); document.getElementById('exp-desc').value = text; sendPostAction("deleteTodo", null, { id }); }
+        function toggleTodo(id, cur) { optimisticSendPost("toggleTodo", { id: id, completed: !cur }); }
+        function deleteTodo(id) { optimisticSendPost("deleteTodo", { id: id }); }
+        function convertTodo(id, text) { openAddModal(); document.getElementById('exp-desc').value = text; optimisticSendPost("deleteTodo", { id: id }); }
         
         function renderTodos() {
             const list = document.getElementById('todo-list');
             list.innerHTML = '';
-            if(!db.todos || db.todos.length === 0) {
-                list.innerHTML = '<div class="p-4 text-xs text-mute text-center">No tasks pending.</div>';
-                return;
-            }
+            if(!db.todos || db.todos.length === 0) { list.innerHTML = '<div class="p-4 text-xs text-mute text-center">目前無待辦事項。</div>'; return; }
             
+            let activeTodos = [];
+            let doneTodos = [];
             db.todos.forEach(t => {
                 let isComp = (t.completed === true || t.completed === "true");
+                if(isComp) doneTodos.push(t); else activeTodos.push(t);
+            });
+
+            activeTodos.forEach(t => {
+                let isUrgent = (t.text.includes('繳費') || t.text.includes('急') || t.text.includes('卡'));
+                let urgentDot = isUrgent ? `<span class="w-1.5 h-1.5 rounded-full bg-[#9F2F2D] ml-2 animate-pulse"></span>` : '';
                 list.insertAdjacentHTML('beforeend', `
-                    <div class="todo-item p-3 border-b border-line flex items-center justify-between ${isComp ? 'opacity-40 bg-[#FBFBFA]' : 'bg-surface'} transition-colors">
-                        <div class="flex items-center gap-3 w-full cursor-pointer" onclick="toggleTodo(${t.id}, ${isComp})">
-                            <div class="w-4 h-4 border ${isComp ? 'border-ink bg-ink text-surface' : 'border-line'} rounded flex items-center justify-center text-[10px]">
-                                ${isComp ? '<i class="ph-bold ph-check"></i>' : ''}
-                            </div>
-                            <span class="text-sm ${isComp ? 'line-through text-mute' : 'text-ink'} transition-all">${t.text}</span>
+                    <div class="todo-item p-3 border-b border-line flex items-center justify-between bg-surface transition-colors">
+                        <div class="flex items-center gap-3 w-full cursor-pointer" onclick="toggleTodo(${t.id}, false)">
+                            <div class="w-4 h-4 border border-line rounded flex items-center justify-center text-[10px]"></div>
+                            <span class="text-sm ${isUrgent ? 'text-[#9F2F2D] font-medium' : 'text-ink'} transition-all flex items-center">${t.text} ${urgentDot}</span>
                         </div>
                         <div class="flex gap-2 shrink-0">
-                            ${!isComp ? `<button onclick="convertTodo(${t.id}, '${t.text}')" class="text-[10px] text-mute hover:text-ink border border-line px-2 py-0.5 rounded transition-colors"><i class="ph-bold ph-arrows-left-right mr-1"></i>轉支出</button>` : ''}
+                            <button onclick="convertTodo(${t.id}, '${t.text}')" class="text-[10px] text-mute hover:text-ink border border-line px-2 py-0.5 rounded transition-colors"><i class="ph-bold ph-arrows-left-right mr-1"></i>轉支出</button>
                             <button onclick="deleteTodo(${t.id})" class="text-mute hover:text-[#9F2F2D] p-1"><i class="ph-bold ph-trash text-xs"></i></button>
                         </div>
                     </div>
                 `);
             });
+
+            if(doneTodos.length > 0) {
+                list.insertAdjacentHTML('beforeend', '<div class="bg-bone px-4 py-2 text-[10px] text-mute font-mono uppercase tracking-widest border-y border-line">已完成任務</div>');
+                doneTodos.forEach(t => {
+                    list.insertAdjacentHTML('beforeend', `
+                        <div class="todo-item p-3 border-b border-line flex items-center justify-between opacity-40 bg-[#FBFBFA] transition-colors">
+                            <div class="flex items-center gap-3 w-full cursor-pointer" onclick="toggleTodo(${t.id}, true)">
+                                <div class="w-4 h-4 border border-ink bg-ink text-surface rounded flex items-center justify-center text-[10px]"><i class="ph-bold ph-check"></i></div>
+                                <span class="text-sm line-through text-mute transition-all flex items-center">${t.text}</span>
+                            </div>
+                            <div class="flex gap-2 shrink-0">
+                                <button onclick="deleteTodo(${t.id})" class="text-mute hover:text-[#9F2F2D] p-1"><i class="ph-bold ph-trash text-xs"></i></button>
+                            </div>
+                        </div>
+                    `);
+                });
+            }
         }
 
         function renderCharts() {
             if(document.getElementById('tab-dashboard').classList.contains('hidden')) return;
-            
-            // Shared configuration
             Chart.defaults.font.family = '"Geist Mono", "JetBrains Mono", monospace';
             Chart.defaults.color = '#787774';
-
             const ctxL = document.getElementById('trendChart').getContext('2d');
             const labels = [];
-            for (let i = 6; i >= 0; i--) { const d = new Date(); d.setDate(d.getDate() - i); labels.push(d.toISOString().split('T')[0]); }
+            for (let i = 6; i >= 0; i--) { 
+                let d = new Date(); 
+                d.setDate(d.getDate() - i);
+                let localDateStr = new Date(d.getTime() - (d.getTimezoneOffset() * 60000)).toISOString().split('T')[0];
+                labels.push(localDateStr); 
+            }
             const lineData = labels.map(date => db.transactions.filter(t => t.date === date && t.type === 'expense').reduce((sum, t) => sum + parseFloat(t.amount), 0));
             
             if(tChart) tChart.destroy();
             tChart = new Chart(ctxL, {
                 type: 'line',
-                data: { 
-                    labels: labels.map(l => l.substring(5)), 
-                    datasets: [{ 
-                        data: lineData, 
-                        borderColor: '#111111', 
-                        backgroundColor: 'rgba(17, 17, 17, 0.04)', 
-                        borderWidth: 1.5, 
-                        tension: 0, // Sharp lines for editorial feel
-                        fill: true, 
-                        pointBackgroundColor: '#FFFFFF',
-                        pointBorderColor: '#111111',
-                        pointRadius: 3,
-                        pointHoverRadius: 5
-                    }] 
-                },
-                options: { 
-                    responsive: true, 
-                    maintainAspectRatio: false, 
-                    plugins: { legend: { display: false } }, 
-                    scales: { 
-                        x: { grid: { display: false }, border: { display: false }, ticks: { font: { size: 10 } } }, 
-                        y: { beginAtZero: true, border: { display: false }, grid: { color: '#EAEAEA', drawTicks: false }, ticks: { maxTicksLimit: 5, font: { size: 10 } } } 
-                    } 
-                }
+                data: { labels: labels.map(l => l.substring(5)), datasets: [{ data: lineData, borderColor: '#111111', backgroundColor: 'rgba(17, 17, 17, 0.04)', borderWidth: 1.5, tension: 0, fill: true, pointBackgroundColor: '#FFFFFF', pointBorderColor: '#111111', pointRadius: 3, pointHoverRadius: 5 }] },
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { grid: { display: false }, border: { display: false }, ticks: { font: { size: 10 } } }, y: { beginAtZero: true, border: { display: false }, grid: { color: '#EAEAEA', drawTicks: false }, ticks: { maxTicksLimit: 5, font: { size: 10 } } } } }
             });
 
             const ctxC = document.getElementById('categoryChart').getContext('2d');
@@ -674,22 +937,12 @@
             if(cChart) cChart.destroy();
             cChart = new Chart(ctxC, {
                 type: 'doughnut',
-                data: { 
-                    labels: ['飲食', '居住', '交通', '娛樂', '其他'], 
-                    // Muted palette for minimalist editorial look
-                    datasets: [{ data: Object.values(catSums), backgroundColor: ['#111111', '#787774', '#D4D4D4', '#F3F3F2', '#EAEAEA'], borderWidth: 1, borderColor: '#FFFFFF' }] 
-                },
-                options: { 
-                    responsive: true, 
-                    maintainAspectRatio: false, 
-                    cutout: '75%', 
-                    plugins: { legend: { position: 'right', labels: { usePointStyle: true, boxWidth: 6, font: { size: 10, family: '"SF Pro Display", sans-serif' } } } } 
-                }
+                data: { labels: ['飲食', '居住', '交通', '娛樂', '其他'], datasets: [{ data: Object.values(catSums), backgroundColor: ['#111111', '#787774', '#D4D4D4', '#F3F3F2', '#EAEAEA'], borderWidth: 1, borderColor: '#FFFFFF' }] },
+                options: { responsive: true, maintainAspectRatio: false, cutout: '75%', plugins: { legend: { position: 'right', labels: { usePointStyle: true, boxWidth: 6, font: { size: 10, family: '"SF Pro Display", sans-serif' } } } } }
             });
         }
 
-        // 初次進入頁面，自動讀取
-        window.onload = fetchData;
+        window.onload = initLoad;
     </script>
 </body>
 </html>

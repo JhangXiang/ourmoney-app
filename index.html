@@ -30,6 +30,7 @@
     </script>
 
     <style>
+        /* 升級為 100dvh 解決手機瀏覽器高度計算 Bug */
         html, body { background-color: #FBFBFA; color: #111111; overscroll-behavior-y: none; touch-action: manipulation; -webkit-tap-highlight-color: transparent; }
         ::-webkit-scrollbar { display: none; }
         
@@ -41,13 +42,13 @@
 
         input[type="number"]::-webkit-inner-spin-button, input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
         .no-ring:focus { outline: none; box-shadow: none; }
-        /* 安全距離與底部防遮擋 */
+        
+        /* 動態安全距離設定 */
         .pb-safe { padding-bottom: calc(env(safe-area-inset-bottom) + 8px); }
-        .main-content-pb { padding-bottom: calc(env(safe-area-inset-bottom) + 90px); }
         #sync-indicator { transition: opacity 0.3s; }
     </style>
 </head>
-<body class="flex flex-col md:flex-row h-screen overflow-hidden font-sans text-ink">
+<body class="flex flex-col md:flex-row h-[100dvh] overflow-hidden font-sans text-ink">
 
     <div id="sync-indicator" class="fixed top-2 right-2 z-[150] bg-ink text-surface text-[10px] font-mono px-2 py-1 rounded-full flex items-center gap-1.5 opacity-0 pointer-events-none shadow-md">
         <i class="ph-bold ph-arrows-clockwise animate-spin"></i> Syncing
@@ -98,18 +99,18 @@
 
     <div class="flex-1 flex flex-col overflow-hidden relative bg-bone">
         
-        <header class="h-16 bg-surface border-b border-line flex items-center justify-between px-3 md:px-8 z-10 shrink-0">
-            <div class="flex items-center bg-line p-1 rounded-lg">
-                <button id="tab-shared" onclick="switchLedger('shared')" class="px-3 py-1.5 text-xs font-medium rounded-md bg-ink text-surface shadow-sm transition-all flex items-center gap-1.5"><i class="ph-bold ph-users"></i><span class="hidden md:inline">公積金</span></button>
-                <button id="tab-personal" onclick="switchLedger('personal')" class="px-3 py-1.5 text-xs font-medium rounded-md text-mute hover:text-ink transition-all flex items-center gap-1.5"><i class="ph-bold ph-lock-key"></i><span class="hidden md:inline">個人帳本</span></button>
+        <header class="h-14 md:h-16 bg-surface border-b border-line flex items-center justify-between px-3 md:px-8 z-10 shrink-0">
+            <div class="flex items-center bg-line p-1 rounded-lg shrink-0">
+                <button id="tab-shared" onclick="switchLedger('shared')" class="px-2.5 py-1.5 text-[11px] sm:text-xs font-medium rounded-md bg-ink text-surface shadow-sm transition-all flex items-center gap-1.5"><i class="ph-bold ph-users"></i><span>公積金</span></button>
+                <button id="tab-personal" onclick="switchLedger('personal')" class="px-2.5 py-1.5 text-[11px] sm:text-xs font-medium rounded-md text-mute hover:text-ink transition-all flex items-center gap-1.5"><i class="ph-bold ph-lock-key"></i><span>個人</span></button>
             </div>
-            <div class="flex items-center gap-2 md:gap-3">
-                <button onclick="openTopupModal()" class="text-ink bg-bone border border-line hover:bg-line text-xs font-medium px-3 py-1.5 rounded-md flex items-center gap-1.5 transition-colors"><i class="ph-bold ph-arrow-down"></i> <span class="hidden md:inline">入金/收入</span></button>
-                <button onclick="openAddModal()" class="bg-ink text-surface hover:bg-gray-800 text-xs font-medium px-3 py-1.5 rounded-md flex items-center gap-1.5 transition-transform active:scale-95"><i class="ph-bold ph-plus"></i> <span class="hidden md:inline">記一筆</span></button>
+            <div class="flex items-center gap-2 shrink-0">
+                <button onclick="openTopupModal()" class="text-ink bg-bone border border-line hover:bg-line text-xs font-medium px-2.5 md:px-3 py-1.5 rounded-md flex items-center gap-1.5 transition-colors"><i class="ph-bold ph-arrow-down"></i> <span class="hidden md:inline">入金/收入</span></button>
+                <button onclick="openAddModal()" class="bg-ink text-surface hover:bg-gray-800 text-xs font-medium px-2.5 md:px-3 py-1.5 rounded-md flex items-center gap-1.5 transition-transform active:scale-95"><i class="ph-bold ph-plus"></i> <span class="hidden sm:inline">記一筆</span></button>
             </div>
         </header>
 
-        <main class="flex-1 overflow-y-auto p-4 md:p-8 main-content-pb md:pb-8">
+        <main class="flex-1 overflow-y-auto p-4 md:p-8 pb-28 md:pb-8 scroll-smooth">
             <section id="tab-dashboard" class="space-y-4 md:space-y-6 max-w-5xl mx-auto tab-content">
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6">
                     <div class="bg-surface p-6 rounded-lg border border-line flex flex-col justify-center relative overflow-hidden group">
@@ -175,7 +176,7 @@
 
             <section id="tab-calendar" class="hidden max-w-4xl mx-auto h-full tab-content">
                 <div class="bg-surface rounded-lg border border-line h-[calc(100vh-180px)] flex flex-col">
-                    <div class="p-4 md:p-6 border-b border-line flex justify-between items-center">
+                    <div class="p-4 md:p-6 border-b border-line flex justify-between items-center shrink-0">
                         <h4 class="font-mono text-[10px] uppercase tracking-widest text-mute flex items-center gap-1.5"><i class="ph-bold ph-clock-counter-clockwise"></i> 歷史明細 (點擊查看詳情)</h4>
                     </div>
                     <div class="flex-1 overflow-y-auto" id="full-history-list"></div>
@@ -195,11 +196,11 @@
         </main>
     </div>
 
-    <nav class="md:hidden fixed bottom-0 w-full bg-surface border-t border-line flex justify-around items-center h-16 z-40 px-2 pb-safe shadow-[0_-4px_15px_rgba(0,0,0,0.03)]">
-        <button onclick="switchTab('dashboard')" id="btn-dashboard-mob" class="mobile-nav-item active flex flex-col items-center gap-1 w-1/4 py-2 transition-colors"><i class="ph-bold ph-chart-pie-slice text-xl"></i><span class="text-[9px] font-medium tracking-wide">總覽</span></button>
-        <button onclick="switchTab('budget')" id="btn-budget-mob" class="mobile-nav-item flex flex-col items-center gap-1 w-1/4 py-2 transition-colors"><i class="ph-bold ph-target text-xl"></i><span class="text-[9px] font-medium tracking-wide">預算</span></button>
-        <button onclick="switchTab('calendar')" id="btn-calendar-mob" class="mobile-nav-item flex flex-col items-center gap-1 w-1/4 py-2 transition-colors"><i class="ph-bold ph-list-dashes text-xl"></i><span class="text-[9px] font-medium tracking-wide">明細</span></button>
-        <button onclick="switchTab('todo')" id="btn-todo-mob" class="mobile-nav-item flex flex-col items-center gap-1 w-1/4 py-2 transition-colors"><i class="ph-bold ph-check-square text-xl"></i><span class="text-[9px] font-medium tracking-wide">待辦</span></button>
+    <nav class="md:hidden fixed bottom-0 w-full bg-surface border-t border-line flex justify-around items-center z-40 px-2 pt-2 pb-[calc(env(safe-area-inset-bottom)+8px)] shadow-[0_-4px_15px_rgba(0,0,0,0.03)]">
+        <button onclick="switchTab('dashboard')" id="btn-dashboard-mob" class="mobile-nav-item active flex flex-col items-center gap-1 w-1/4 transition-colors"><i class="ph-bold ph-chart-pie-slice text-xl"></i><span class="text-[10px] font-medium tracking-wide">總覽</span></button>
+        <button onclick="switchTab('budget')" id="btn-budget-mob" class="mobile-nav-item flex flex-col items-center gap-1 w-1/4 transition-colors"><i class="ph-bold ph-target text-xl"></i><span class="text-[10px] font-medium tracking-wide">預算</span></button>
+        <button onclick="switchTab('calendar')" id="btn-calendar-mob" class="mobile-nav-item flex flex-col items-center gap-1 w-1/4 transition-colors"><i class="ph-bold ph-list-dashes text-xl"></i><span class="text-[10px] font-medium tracking-wide">明細</span></button>
+        <button onclick="switchTab('todo')" id="btn-todo-mob" class="mobile-nav-item flex flex-col items-center gap-1 w-1/4 transition-colors"><i class="ph-bold ph-check-square text-xl"></i><span class="text-[10px] font-medium tracking-wide">待辦</span></button>
     </nav>
 
     <div id="view-modal" class="hidden fixed inset-0 bg-bone/80 backdrop-blur-sm z-50 flex items-end md:items-center justify-center p-0 md:p-4">
@@ -255,7 +256,7 @@
                         <label class="block text-[10px] uppercase font-mono tracking-widest text-mute mb-1.5">總金額</label>
                         <div class="relative">
                             <span class="absolute left-0 top-1.5 text-mute font-mono">$</span>
-                            <input type="text" id="exp-amount" readonly onclick="openCalculator()" required class="w-full bg-transparent border-b border-line p-2 pl-4 text-xl font-mono text-ink outline-none focus:border-ink placeholder:text-line transition-colors cursor-pointer" placeholder="點擊計算...">
+                            <input type="text" id="exp-amount" readonly onclick="openCalculator()" class="w-full bg-transparent border-b border-line p-2 pl-4 text-xl font-mono text-ink outline-none focus:border-ink placeholder:text-line transition-colors cursor-pointer" placeholder="點擊計算...">
                         </div>
                     </div>
                     
@@ -392,12 +393,11 @@
     </div>
 
     <script>
-        // ⚠️ 記得確保此處是最新部署的網址
         const GAS_API_URL = "https://script.google.com/macros/s/AKfycbyxlgzLPXDS5Ojm_KoL__0szE2PFeYT6t9CPgpRVM2g6exzVGuGWbI7HM_GpIL0L_r5nw/exec";
 
         let db = { transactions: [], todos: [], recurring_rules: [] };
         let userProfile = { name: '', avatar: '' };
-        let currentLedger = 'shared'; // 預設共用帳本
+        let currentLedger = 'shared'; 
         
         const catIcons = {
             'food': { icon: 'ph-fork-knife', color: 'text-ink', bg: 'bg-[#F3F3F2]', label: '飲食' },
@@ -416,22 +416,20 @@
             const btnPersonal = document.getElementById('tab-personal');
             
             if(ledger === 'shared') {
-                btnShared.className = "px-3 py-1.5 text-xs font-medium rounded-md bg-ink text-surface shadow-sm transition-all flex items-center gap-1.5";
-                btnPersonal.className = "px-3 py-1.5 text-xs font-medium rounded-md text-mute hover:text-ink transition-all flex items-center gap-1.5";
+                btnShared.className = "px-2.5 py-1.5 text-[11px] sm:text-xs font-medium rounded-md bg-ink text-surface shadow-sm transition-all flex items-center gap-1.5";
+                btnPersonal.className = "px-2.5 py-1.5 text-[11px] sm:text-xs font-medium rounded-md text-mute hover:text-ink transition-all flex items-center gap-1.5";
                 document.getElementById('settle-block').classList.remove('hidden');
                 document.getElementById('personal-stat-block').classList.add('hidden');
                 document.getElementById('dash-balance-title').innerHTML = '<i class="ph-bold ph-bank"></i> 公積金餘額';
                 
                 document.getElementById('payer-section-wrapper').classList.remove('opacity-50', 'pointer-events-none');
             } else {
-                // 切換至個人帳本，按鈕顯示藍色
-                btnPersonal.className = "px-3 py-1.5 text-xs font-medium rounded-md bg-[#1F6C9F] text-surface shadow-sm transition-all flex items-center gap-1.5";
-                btnShared.className = "px-3 py-1.5 text-xs font-medium rounded-md text-mute hover:text-ink transition-all flex items-center gap-1.5";
+                btnPersonal.className = "px-2.5 py-1.5 text-[11px] sm:text-xs font-medium rounded-md bg-[#1F6C9F] text-surface shadow-sm transition-all flex items-center gap-1.5";
+                btnShared.className = "px-2.5 py-1.5 text-[11px] sm:text-xs font-medium rounded-md text-mute hover:text-ink transition-all flex items-center gap-1.5";
                 document.getElementById('settle-block').classList.add('hidden');
                 document.getElementById('personal-stat-block').classList.remove('hidden');
                 document.getElementById('dash-balance-title').innerHTML = '<i class="ph-bold ph-wallet"></i> 個人淨資產';
                 
-                // 個人帳本強制設定為 "me" 付款，隱藏分攤
                 document.querySelector('input[name="payer"][value="me"]').checked = true;
                 toggleSplitOptions();
                 document.getElementById('payer-section-wrapper').classList.add('opacity-50', 'pointer-events-none');
@@ -439,7 +437,6 @@
             updateCoreUI();
         }
 
-        // 生成每月日曆網格
         function initMonthlyGrid() {
             let gridHtml = '';
             for(let i=1; i<=31; i++) {
@@ -448,7 +445,6 @@
             document.getElementById('monthly-grid').innerHTML = gridHtml;
         }
 
-        // 獨立計算機系統
         let calcExpression = '';
         function openCalculator() {
             document.getElementById('calculator-sheet').style.transform = 'translateY(0)';
@@ -565,7 +561,6 @@
             document.getElementById('top-amount').value = '';
             document.getElementById('top-note').value = '';
             
-            // 資金轉移選項處理
             const title = document.getElementById('topup-title');
             const transferOpt = document.getElementById('transfer-opt-container');
             document.getElementById('topup-transfer').checked = false;
@@ -653,7 +648,6 @@
             finally { stopSync(); }
         }
 
-        // --- 支援陣列的 Optimistic 更新 ---
         async function optimisticSendPost(action, dataObj, extraParams = {}) {
             let txs = Array.isArray(dataObj) ? dataObj : [dataObj];
 
@@ -687,7 +681,6 @@
             if(!db.transactions) db.transactions = [];
             db.transactions.sort((a, b) => new Date(b.date) - new Date(a.date));
 
-            // 資料過濾：雙帳本核心邏輯
             const isShared = currentLedger === 'shared';
             const personalLedgerKey = 'personal_' + userProfile.name;
             window.currentTx = db.transactions.filter(t => isShared ? (t.ledger === 'shared' || !t.ledger) : t.ledger === personalLedgerKey);
@@ -711,18 +704,15 @@
                             else if (t.payer === 'partner') myPersonalDebt -= myShare;
                         }
                     } else {
-                        // 個人帳本計算邏輯
                         fundBalance -= amt;
                         if(new Date(t.date).getMonth() === currentMonth) personalMonthExp += amt;
                     }
                 }
             });
 
-            // 更新總餘額
             const balanceEl = document.getElementById('dash-fund-balance');
             balanceEl.innerHTML = `$${Number(fundBalance).toLocaleString()}`;
 
-            // 更新結算與花費區塊
             if (isShared) {
                 const sTitle = document.getElementById('settle-title');
                 const sDesc = document.getElementById('settle-desc');
@@ -748,7 +738,6 @@
             const list = document.getElementById('recurring-list');
             list.innerHTML = '';
             
-            // 過濾固定支出
             const personalLedgerKey = 'personal_' + userProfile.name;
             const currentRules = (db.recurring_rules || []).filter(r => currentLedger === 'shared' ? (r.ledger === 'shared' || !r.ledger) : r.ledger === personalLedgerKey);
 
@@ -817,10 +806,17 @@
             else { statusText.innerText = `超支 $${Math.abs(left).toLocaleString()}`; statusText.className = "text-[10px] text-[#9F2F2D] text-right font-bold"; }
         }
 
+        // --- 修復：手動驗證表單金額，避免必填死當 ---
         document.getElementById('expense-form').addEventListener('submit', async function(e) {
             e.preventDefault();
-            const payer = document.querySelector('input[name="payer"]:checked').value;
+            
             const total = parseFloat(amtInput.value);
+            if (isNaN(total) || total <= 0) {
+                alert('⚠️ 請點擊金額欄位，輸入支出總金額！');
+                return;
+            }
+
+            const payer = document.querySelector('input[name="payer"]:checked').value;
             const myShare = parseFloat(myShareInput.value) || 0;
             const isRecurring = document.getElementById('exp-recurring').checked;
             
@@ -878,7 +874,6 @@
             }
         });
 
-        // --- 入金邏輯 (包含資金流轉) ---
         document.getElementById('topup-form').addEventListener('submit', function(e) {
             e.preventDefault();
             const isTransfer = document.getElementById('topup-transfer').checked;
@@ -889,7 +884,6 @@
             
             let payloads = [];
 
-            // 1. 主要入金紀錄
             payloads.push({
                 id: Date.now(), type: 'topup', date: date, 
                 desc: (isTransfer && currentLedger === 'shared') ? '自個人帳本轉入' : (currentLedger === 'shared' ? '存入公積金' : '新增個人收入'), 
@@ -897,7 +891,6 @@
                 uploader: userProfile.name, ledger: targetLedger
             });
 
-            // 2. 如果勾選轉帳，自動在個人帳本產生扣款
             if (currentLedger === 'shared' && isTransfer) {
                 payloads.push({
                     id: Date.now() + 1, type: 'expense', date: date,

@@ -377,8 +377,7 @@
     </div>
 
     <script>
-        // ⚠️ 記得確保此處是最新部署的網址
-        const GAS_API_URL = "https://script.google.com/macros/s/AKfycbyxlgzLPXDS5Ojm_KoL__0szE2PFeYT6t9CPgpRVM2g6exzVGuGWbI7HM_GpIL0L_r5nw/exec";
+        const GAS_API_URL = "https://script.google.com/macros/s/AKfycbyxlgzLPXDS5Ojm_KoL__0szE2PFeYT6t9CPgpRVM2g6exzVGuGWbI7HM_GpIL0L_r5nw/exec?action=checkTodos";
 
         let db = { transactions: [], todos: [], recurring_rules: [] };
         let userProfile = { name: '', avatar: '' };
@@ -586,19 +585,13 @@
             finally { stopSync(); }
         }
 
-        // --- 修正後的參數拋送機制 ---
         async function optimisticSendPost(action, dataObj, extraParams = {}) {
-            // Optimistic Update
             if(action === "addTransaction") { db.transactions.push(dataObj); }
             else if(action === "addTodo") { db.todos.push({id: dataObj.id, text: dataObj.text, completed: false}); }
             else if(action === "deleteTransaction") { db.transactions = db.transactions.filter(t => t.id.toString() !== dataObj.id.toString()); }
             else if(action === "deleteTodo") { db.todos = db.todos.filter(t => t.id.toString() !== dataObj.id.toString()); }
             else if(action === "deleteRecurringRule") { db.recurring_rules = db.recurring_rules.filter(r => r.id.toString() !== dataObj.id.toString()); }
             else if(action === "archive") { db.transactions.forEach(t => { if(t.type === 'expense' && t.payer !== 'fund') t.isSettled = true; }); }
-            else if(action === "toggleTodo") { 
-                let td = db.todos.find(t => t.id.toString() === dataObj.id.toString());
-                if(td) td.completed = dataObj.completed;
-            }
             
             updateCoreUI();
             startSync();
@@ -695,7 +688,9 @@
         }
 
         function deleteRecurring(id) {
-            if(confirm('確定要移除這項固定支出設定嗎？')) optimisticSendPost("deleteRecurringRule", { id: id });
+            if(confirm('確定要移除這項固定支出設定嗎？')) {
+                optimisticSendPost("deleteRecurringRule", { id: id });
+            }
         }
 
         function setBudgetTarget() {

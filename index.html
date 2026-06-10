@@ -41,6 +41,8 @@
 
         input[type="number"]::-webkit-inner-spin-button, input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
         .no-ring:focus { outline: none; box-shadow: none; }
+        
+        .pb-safe { padding-bottom: calc(env(safe-area-inset-bottom) + 8px); }
         #sync-indicator { transition: opacity 0.3s; }
     </style>
 </head>
@@ -77,7 +79,7 @@
                 <div id="sidebar-avatar" class="w-8 h-8 bg-line rounded-full flex items-center justify-center text-lg">👤</div>
                 <div>
                     <h1 class="font-bold text-sm" id="sidebar-name">User</h1>
-                    <p class="text-[10px] font-mono text-mute uppercase">Dual Ledger System</p>
+                    <p class="text-[10px] font-mono text-mute uppercase">Shared Ledger</p>
                 </div>
             </div>
             <nav class="space-y-1">
@@ -95,14 +97,14 @@
 
     <div class="flex-1 flex flex-col overflow-hidden relative bg-bone">
         
-        <header class="h-14 md:h-16 bg-surface border-b border-line flex items-center justify-between px-3 md:px-8 z-10 shrink-0">
-            <div class="flex items-center bg-line p-1 rounded-lg shrink-0">
-                <button id="tab-shared" onclick="switchLedger('shared')" class="px-2.5 py-1.5 text-[11px] sm:text-xs font-medium rounded-md bg-ink text-surface shadow-sm transition-all flex items-center gap-1.5"><i class="ph-bold ph-users"></i><span>公積金</span></button>
-                <button id="tab-personal" onclick="switchLedger('personal')" class="px-2.5 py-1.5 text-[11px] sm:text-xs font-medium rounded-md text-mute hover:text-ink transition-all flex items-center gap-1.5"><i class="ph-bold ph-lock-key"></i><span>個人</span></button>
+        <header class="h-14 md:h-16 bg-surface border-b border-line flex items-center justify-between px-4 md:px-8 z-10 shrink-0">
+            <div class="flex items-center gap-2">
+                <div id="header-avatar" class="md:hidden w-7 h-7 bg-line rounded-full flex items-center justify-center text-sm mr-1">👤</div>
+                <span class="text-[11px] bg-bone border border-line text-mute font-mono uppercase tracking-wider px-2 py-1 rounded flex items-center gap-1.5"><i class="ph-bold ph-buildings"></i> 共用公積金</span>
             </div>
             <div class="flex items-center gap-2 shrink-0">
-                <button onclick="openTopupModal()" class="text-ink bg-bone border border-line hover:bg-line text-xs font-medium px-2.5 md:px-3 py-1.5 rounded-md flex items-center gap-1.5 transition-colors"><i class="ph-bold ph-arrow-down"></i> <span class="hidden md:inline">入金/收入</span></button>
-                <button onclick="openAddModal()" class="bg-ink text-surface hover:bg-gray-800 text-xs font-medium px-2.5 md:px-3 py-1.5 rounded-md flex items-center gap-1.5 transition-transform active:scale-95"><i class="ph-bold ph-plus"></i> <span class="hidden sm:inline">記一筆</span></button>
+                <button onclick="openTopupModal()" class="text-ink bg-bone border border-line hover:bg-line text-xs font-medium px-3 md:px-4 py-1.5 rounded-md flex items-center gap-1.5 transition-colors"><i class="ph-bold ph-arrow-down"></i> <span class="hidden md:inline">存入資金</span></button>
+                <button onclick="openAddModal()" class="bg-ink text-surface hover:bg-gray-800 text-xs font-medium px-3 md:px-4 py-1.5 rounded-md flex items-center gap-1.5 transition-transform active:scale-95"><i class="ph-bold ph-plus"></i> <span class="hidden sm:inline">記一筆</span></button>
             </div>
         </header>
 
@@ -110,23 +112,16 @@
             <section id="tab-dashboard" class="space-y-4 md:space-y-6 max-w-5xl mx-auto tab-content">
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6">
                     <div class="bg-surface p-6 rounded-lg border border-line flex flex-col justify-center relative overflow-hidden group">
-                        <p class="text-[10px] text-mute font-mono uppercase tracking-widest mb-2 flex items-center gap-1.5" id="dash-balance-title"><i class="ph-bold ph-bank"></i> 公積金餘額</p>
+                        <p class="text-[10px] text-mute font-mono uppercase tracking-widest mb-2 flex items-center gap-1.5"><i class="ph-bold ph-bank"></i> 公積金餘額</p>
                         <h3 class="text-3xl md:text-4xl font-mono text-ink tracking-tight" id="dash-fund-balance">$0</h3>
                     </div>
                     
-                    <div id="settle-block" class="bg-surface p-6 rounded-lg border border-line md:col-span-2 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                    <div class="bg-surface p-6 rounded-lg border border-line md:col-span-2 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                         <div>
                             <p class="text-[10px] text-mute font-mono uppercase tracking-widest mb-2" id="settle-title">代墊結算狀態</p>
                             <h3 class="text-2xl md:text-3xl font-mono tracking-tight" id="settle-desc">互不相欠</h3>
                         </div>
                         <button onclick="archiveSettlement()" class="text-xs text-mute border border-line hover:border-ink hover:text-ink px-4 py-1.5 rounded-md transition-colors flex items-center gap-1.5"><i class="ph-bold ph-checks"></i> 結清歸零</button>
-                    </div>
-
-                    <div id="personal-stat-block" class="hidden bg-surface p-6 rounded-lg border border-line md:col-span-2 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-                        <div>
-                            <p class="text-[10px] text-mute font-mono uppercase tracking-widest mb-2">本月個人總花費</p>
-                            <h3 class="text-2xl md:text-3xl font-mono tracking-tight text-[#9F2F2D]" id="personal-month-exp">$0</h3>
-                        </div>
                     </div>
                 </div>
 
@@ -215,7 +210,7 @@
                 <h3 class="text-sm font-medium text-ink flex items-center gap-2"><i class="ph-bold ph-pencil-simple text-mute"></i> 紀錄支出</h3>
                 <button type="button" onclick="closeModal('add-modal')" class="text-mute hover:text-ink transition-colors p-1"><i class="ph-bold ph-x text-lg"></i></button>
             </div>
-            <div class="overflow-y-auto p-4 md:p-6 pb-24">
+            <div class="overflow-y-auto p-4 md:p-6 pb-[env(safe-area-inset-bottom)]">
                 <form id="expense-form" class="space-y-5">
                     
                     <div class="border border-dashed border-line rounded-md p-3 flex justify-center items-center group hover:border-mute transition-colors cursor-pointer relative overflow-hidden bg-bone min-h-[60px]">
@@ -380,7 +375,7 @@
     <div id="topup-modal" class="hidden fixed inset-0 bg-bone/80 backdrop-blur-sm z-50 flex items-end md:items-center justify-center p-0 md:p-4">
         <div class="modal-panel bg-surface w-full max-w-sm md:rounded-xl border-t md:border border-line flex flex-col">
             <div class="p-4 md:p-5 border-b border-line flex justify-between items-center">
-                <h3 class="text-sm font-medium text-ink flex items-center gap-2"><i class="ph-bold ph-arrow-down text-mute"></i> <span id="topup-title">存入資金</span></h3>
+                <h3 class="text-sm font-medium text-ink flex items-center gap-2"><i class="ph-bold ph-arrow-down text-mute"></i> <span>存入資金</span></h3>
                 <button type="button" onclick="closeModal('topup-modal')" class="text-mute hover:text-ink transition-colors p-1"><i class="ph-bold ph-x text-lg"></i></button>
             </div>
             <form id="topup-form" class="p-4 md:p-6 space-y-5 pb-safe">
@@ -396,14 +391,6 @@
                     </div>
                 </div>
                 <div><input type="text" id="top-note" class="w-full bg-transparent border-b border-line p-2 text-sm outline-none focus:border-ink placeholder:text-line" placeholder="備註..."></div>
-                
-                <div id="transfer-opt-container" class="mt-4 pt-4 border-t border-line hidden">
-                    <label class="flex items-center gap-2 cursor-pointer group">
-                        <input type="checkbox" id="topup-transfer" class="w-4 h-4 rounded border-line text-ink focus:ring-ink">
-                        <span class="text-xs font-medium text-ink">從我的個人帳本扣款 (自動產生轉出紀錄)</span>
-                    </label>
-                </div>
-
                 <button type="submit" class="w-full bg-ink text-surface rounded-md p-3 font-medium text-sm mt-2 hover:bg-gray-800 transition-transform active:scale-[0.98]">確認入金</button>
             </form>
         </div>
@@ -414,7 +401,6 @@
 
         let db = { transactions: [], todos: [], recurring_rules: [] };
         let userProfile = { name: '', avatar: '' };
-        let currentLedger = 'shared'; 
         
         const catIcons = {
             'food': { icon: 'ph-fork-knife', color: 'text-ink', bg: 'bg-[#F3F3F2]', label: '飲食' },
@@ -425,33 +411,6 @@
             'topup': { icon: 'ph-arrow-down', color: 'text-[#346538]', bg: 'bg-[#EDF3EC]', label: '入金' }
         };
         let tChart = null, cChart = null;
-
-        function switchLedger(ledger) {
-            currentLedger = ledger;
-            const btnShared = document.getElementById('tab-shared');
-            const btnPersonal = document.getElementById('tab-personal');
-            
-            if(ledger === 'shared') {
-                btnShared.className = "px-2.5 py-1.5 text-[11px] sm:text-xs font-medium rounded-md bg-ink text-surface shadow-sm transition-all flex items-center gap-1.5";
-                btnPersonal.className = "px-2.5 py-1.5 text-[11px] sm:text-xs font-medium rounded-md text-mute hover:text-ink transition-all flex items-center gap-1.5";
-                document.getElementById('settle-block').classList.remove('hidden');
-                document.getElementById('personal-stat-block').classList.add('hidden');
-                document.getElementById('dash-balance-title').innerHTML = '<i class="ph-bold ph-bank"></i> 公積金餘額';
-                document.getElementById('payer-section-wrapper').classList.remove('opacity-50', 'pointer-events-none');
-            } else {
-                btnPersonal.className = "px-2.5 py-1.5 text-[11px] sm:text-xs font-medium rounded-md bg-[#1F6C9F] text-surface shadow-sm transition-all flex items-center gap-1.5";
-                btnShared.className = "px-2.5 py-1.5 text-[11px] sm:text-xs font-medium rounded-md text-mute hover:text-ink transition-all flex items-center gap-1.5";
-                document.getElementById('settle-block').classList.add('hidden');
-                document.getElementById('personal-stat-block').classList.remove('hidden');
-                document.getElementById('dash-balance-title').innerHTML = '<i class="ph-bold ph-wallet"></i> 個人淨資產';
-                
-                const meRadio = document.querySelector('input[name="payer"][value="me"]');
-                if (meRadio) meRadio.checked = true;
-                toggleSplitOptions();
-                document.getElementById('payer-section-wrapper').classList.add('opacity-50', 'pointer-events-none');
-            }
-            updateCoreUI();
-        }
 
         function initMonthlyGrid() {
             let gridHtml = '';
@@ -499,7 +458,9 @@
                 document.getElementById('sidebar-name').innerText = userProfile.name;
                 document.getElementById('sidebar-avatar').innerText = userProfile.avatar;
                 document.getElementById('header-avatar').innerText = userProfile.avatar;
-                updatePayerUI();
+                
+                const meLabel = document.getElementById('payer-me-label');
+                if (meLabel) meLabel.innerHTML = `${userProfile.avatar} 我`;
             } else {
                 document.getElementById('auth-modal').classList.remove('hidden');
             }
@@ -513,12 +474,6 @@
             checkProfile();
         }
         function clearProfile() { localStorage.removeItem('om_profile'); location.reload(); }
-
-        // 改為只替換文字，不破壞 HTML 結構
-        function updatePayerUI() {
-            const meLabel = document.getElementById('payer-me-label');
-            if (meLabel) meLabel.innerHTML = `${userProfile.avatar} 我`;
-        }
 
         function switchTab(tabId) {
             ['dashboard', 'budget', 'calendar', 'todo'].forEach(t => {
@@ -544,7 +499,6 @@
             document.getElementById('my-share').value = '';
             document.getElementById('partner-share').value = '';
             
-            // 重置分類
             document.getElementById('exp-category').value = 'food';
             document.getElementById('custom-cat-wrapper').classList.add('hidden');
             document.getElementById('exp-custom-cat').value = '';
@@ -565,7 +519,6 @@
             gsap.fromTo(modal.querySelector('.modal-panel'), { opacity: 0, scale: 0.96, y: 20 }, { opacity: 1, scale: 1, y: 0, duration: 0.4, ease: "back.out(1.1)" });
         }
 
-        // 自訂分類顯示邏輯
         window.handleCategoryChange = function() {
             const cat = document.getElementById('exp-category').value;
             const customWrapper = document.getElementById('custom-cat-wrapper');
@@ -582,18 +535,6 @@
             document.getElementById('top-amount').value = '';
             document.getElementById('top-note').value = '';
             
-            const title = document.getElementById('topup-title');
-            const transferOpt = document.getElementById('transfer-opt-container');
-            document.getElementById('topup-transfer').checked = false;
-
-            if (currentLedger === 'shared') {
-                title.innerText = '存入公積金';
-                transferOpt.classList.remove('hidden');
-            } else {
-                title.innerText = '新增個人收入';
-                transferOpt.classList.add('hidden');
-            }
-
             const modal = document.getElementById('topup-modal');
             modal.classList.remove('hidden');
             gsap.fromTo(modal, { backgroundColor: "rgba(251,251,250,0)" }, { backgroundColor: "rgba(251,251,250,0.8)", duration: 0.3 });
@@ -659,7 +600,12 @@
             initMonthlyGrid(); 
             checkProfile();
             const cached = localStorage.getItem('om_db');
-            if (cached) { db = JSON.parse(cached); updateCoreUI(); }
+            if (cached) { 
+                try {
+                    db = JSON.parse(cached); 
+                    updateCoreUI(); 
+                } catch(e) {}
+            }
             
             startSync();
             try { 
@@ -673,31 +619,35 @@
         }
 
         async function optimisticSendPost(action, dataObj, extraParams = {}) {
-            let txs = Array.isArray(dataObj) ? dataObj : [dataObj];
-
-            if(action === "addTransaction") { txs.forEach(t => db.transactions.push(t)); }
+            if(action === "addTransaction") { db.transactions.push(dataObj); }
             else if(action === "addTodo") { db.todos.push({id: dataObj.id, text: dataObj.text, completed: false}); }
             else if(action === "deleteTransaction") { db.transactions = db.transactions.filter(t => t.id.toString() !== dataObj.id.toString()); }
             else if(action === "deleteTodo") { db.todos = db.todos.filter(t => t.id.toString() !== dataObj.id.toString()); }
             else if(action === "addRecurringRule") { db.recurring_rules.push(dataObj); }
             else if(action === "deleteRecurringRule") { db.recurring_rules = db.recurring_rules.filter(r => r.id.toString() !== dataObj.id.toString()); }
-            else if(action === "archive") { db.transactions.forEach(t => { if(t.type === 'expense' && t.payer !== 'fund' && (!t.ledger || t.ledger==='shared')) t.isSettled = true; }); }
+            else if(action === "archive") { db.transactions.forEach(t => { if(t.type === 'expense' && t.payer !== 'fund') t.isSettled = true; }); }
             else if(action === "toggleTodo") { 
                 let td = db.todos.find(t => t.id.toString() === dataObj.id.toString());
                 if(td) td.completed = dataObj.completed;
             }
             
             updateCoreUI();
+            // 馬上儲存到快取，防止重新整理遺失
+            localStorage.setItem('om_db', JSON.stringify(db));
             startSync();
 
             try {
-                let res = await fetch(GAS_API_URL, { method: "POST", body: JSON.stringify(Object.assign({ action, data: dataObj }, extraParams)) });
+                // 加入 text/plain 宣告，防止手機瀏覽器阻擋 POST
+                let res = await fetch(GAS_API_URL, { 
+                    method: "POST", 
+                    body: JSON.stringify(Object.assign({ action, data: dataObj }, extraParams)),
+                    headers: { "Content-Type": "text/plain;charset=utf-8" }
+                });
                 let result = await res.json();
                 if(result.status !== "success") throw new Error(result.message || "Sync Failed");
-                localStorage.setItem('om_db', JSON.stringify(db));
             } catch (err) {
-                alert("寫入雲端失敗，已退回伺服器狀態。請確認網路連線。");
-                initLoad(); 
+                alert("背景連線異常，資料已暫存於手機端，請稍後下拉重整確認。");
+                // 發生錯誤時不主動清空資料，保留快取
             } finally { stopSync(); }
         }
 
@@ -705,31 +655,21 @@
             if(!db.transactions) db.transactions = [];
             db.transactions.sort((a, b) => new Date(b.date) - new Date(a.date));
 
-            const isShared = currentLedger === 'shared';
-            const personalLedgerKey = 'personal_' + userProfile.name;
-            window.currentTx = db.transactions.filter(t => isShared ? (t.ledger === 'shared' || !t.ledger) : t.ledger === personalLedgerKey);
+            let fundBalance = 0, myPersonalDebt = 0;
 
-            let fundBalance = 0, myPersonalDebt = 0, personalMonthExp = 0;
-            const currentMonth = new Date().getMonth();
-
-            window.currentTx.forEach(t => {
+            db.transactions.forEach(t => {
                 const amt = parseFloat(t.amount);
                 const myRatio = parseFloat(t.splitRatio) / 100; 
                 
                 if (t.type === 'topup') {
                     fundBalance += amt;
                 } else if (t.type === 'expense') {
-                    if (isShared) {
-                        if (t.payer === 'fund') fundBalance -= amt;
-                        else if (t.isSettled === false || t.isSettled === "FALSE" || t.isSettled === "") {
-                            let myShare = amt * myRatio;
-                            let partnerShare = amt - myShare;
-                            if (t.payer === 'me') myPersonalDebt += partnerShare;
-                            else if (t.payer === 'partner') myPersonalDebt -= myShare;
-                        }
-                    } else {
-                        fundBalance -= amt;
-                        if(new Date(t.date).getMonth() === currentMonth) personalMonthExp += amt;
+                    if (t.payer === 'fund') fundBalance -= amt;
+                    else if (t.isSettled === false || t.isSettled === "FALSE" || t.isSettled === "") {
+                        let myShare = amt * myRatio;
+                        let partnerShare = amt - myShare;
+                        if (t.payer === 'me') myPersonalDebt += partnerShare;
+                        else if (t.payer === 'partner') myPersonalDebt -= myShare;
                     }
                 }
             });
@@ -737,18 +677,14 @@
             const balanceEl = document.getElementById('dash-fund-balance');
             balanceEl.innerHTML = `$${Number(fundBalance).toLocaleString()}`;
 
-            if (isShared) {
-                const sTitle = document.getElementById('settle-title');
-                const sDesc = document.getElementById('settle-desc');
-                if (myPersonalDebt === 0) { 
-                    sTitle.innerText = "代墊狀態"; sDesc.innerText = "互不相欠"; sDesc.className = "text-2xl md:text-3xl font-mono tracking-tight text-mute";
-                } else if (myPersonalDebt > 0) { 
-                    sTitle.innerText = "另一半須給你"; sDesc.innerText = `$${myPersonalDebt.toLocaleString()}`; sDesc.className = "text-2xl md:text-3xl font-mono tracking-tight text-[#9F2F2D]"; 
-                } else { 
-                    sTitle.innerText = "你須給另一半"; sDesc.innerText = `$${Math.abs(myPersonalDebt).toLocaleString()}`; sDesc.className = "text-2xl md:text-3xl font-mono tracking-tight text-[#1F6C9F]"; 
-                }
-            } else {
-                document.getElementById('personal-month-exp').innerText = `$${personalMonthExp.toLocaleString()}`;
+            const sTitle = document.getElementById('settle-title');
+            const sDesc = document.getElementById('settle-desc');
+            if (myPersonalDebt === 0) { 
+                sTitle.innerText = "代墊狀態"; sDesc.innerText = "互不相欠"; sDesc.className = "text-2xl md:text-3xl font-mono tracking-tight text-mute";
+            } else if (myPersonalDebt > 0) { 
+                sTitle.innerText = "另一半須給你"; sDesc.innerText = `$${myPersonalDebt.toLocaleString()}`; sDesc.className = "text-2xl md:text-3xl font-mono tracking-tight text-[#9F2F2D]"; 
+            } else { 
+                sTitle.innerText = "你須給另一半"; sDesc.innerText = `$${Math.abs(myPersonalDebt).toLocaleString()}`; sDesc.className = "text-2xl md:text-3xl font-mono tracking-tight text-[#1F6C9F]"; 
             }
 
             renderHistoryList();
@@ -762,15 +698,12 @@
             const list = document.getElementById('recurring-list');
             list.innerHTML = '';
             
-            const personalLedgerKey = 'personal_' + userProfile.name;
-            const currentRules = (db.recurring_rules || []).filter(r => currentLedger === 'shared' ? (r.ledger === 'shared' || !r.ledger) : r.ledger === personalLedgerKey);
-
-            if(currentRules.length === 0) {
-                list.innerHTML = `<div class="text-xs text-mute col-span-2">目前沒有${currentLedger==='shared'?'公積金':'個人'}自動固定支出。</div>`;
+            if(!db.recurring_rules || db.recurring_rules.length === 0) {
+                list.innerHTML = `<div class="text-xs text-mute col-span-2">目前沒有設定自動固定支出。</div>`;
                 return;
             }
             
-            currentRules.forEach(r => {
+            db.recurring_rules.forEach(r => {
                 let ruleText = "未定";
                 if (r.rule) {
                     if (r.rule.startsWith('monthly_')) ruleText = `每月 ${r.rule.split('_')[1]} 號`;
@@ -810,7 +743,7 @@
             const target = parseInt(localStorage.getItem('monthly_budget')) || 20000;
             const currentMonth = new Date().getMonth();
             let spentThisMonth = 0;
-            window.currentTx.forEach(t => { if (t.type === 'expense' && new Date(t.date).getMonth() === currentMonth) spentThisMonth += parseFloat(t.amount); });
+            db.transactions.forEach(t => { if (t.type === 'expense' && new Date(t.date).getMonth() === currentMonth) spentThisMonth += parseFloat(t.amount); });
 
             let percentage = (spentThisMonth / target) * 100;
             if(percentage > 100) percentage = 100;
@@ -830,18 +763,15 @@
             else { statusText.innerText = `超支 $${Math.abs(left).toLocaleString()}`; statusText.className = "text-[10px] text-[#9F2F2D] text-right font-bold"; }
         }
 
-        // --- 防呆處理：手動攔截錯誤，確保不崩潰 ---
         document.getElementById('expense-form').addEventListener('submit', async function(e) {
             e.preventDefault();
             
-            // 金額防呆
             const total = parseFloat(amtInput.value);
             if (isNaN(total) || total <= 0) {
                 alert('⚠️ 記帳失敗：請點擊金額欄位，輸入正確的支出金額喔！');
                 return;
             }
 
-            // 付款來源防呆
             const checkedPayer = document.querySelector('input[name="payer"]:checked');
             if (!checkedPayer) {
                 alert('⚠️ 記帳失敗：請選擇付款來源！');
@@ -851,7 +781,6 @@
             const myShare = parseFloat(myShareInput.value) || 0;
             const isRecurring = document.getElementById('exp-recurring').checked;
             
-            // 自訂分類處理
             let categoryVal = document.getElementById('exp-category').value;
             let finalCategory = categoryVal;
             if (categoryVal === 'custom') {
@@ -874,13 +803,12 @@
             }
 
             let calcRatio = payer === 'fund' ? 0 : (myShare / total) * 100;
-            const targetLedger = currentLedger === 'shared' ? 'shared' : 'personal_' + userProfile.name;
 
             const expenseData = {
                 id: Date.now(), type: 'expense', date: document.getElementById('exp-date').value,
                 desc: descText, amount: total, payer: payer, splitRatio: calcRatio.toFixed(2),
                 category: finalCategory, note: document.getElementById('exp-note').value,
-                isSettled: false, uploader: userProfile.name, ledger: targetLedger
+                isSettled: false, uploader: userProfile.name
             };
 
             if(isRecurring) {
@@ -913,7 +841,11 @@
             if(imageData) {
                 startSync();
                 document.getElementById('sync-indicator').innerHTML = '<i class="ph-bold ph-circle-notch animate-spin"></i> Uploading...';
-                await fetch(GAS_API_URL, { method: "POST", body: JSON.stringify({ action: "addTransaction", data: expenseData, imageData: imageData }) });
+                await fetch(GAS_API_URL, { 
+                    method: "POST", 
+                    body: JSON.stringify({ action: "addTransaction", data: expenseData, imageData: imageData }),
+                    headers: { "Content-Type": "text/plain;charset=utf-8" }
+                });
                 document.getElementById('sync-indicator').innerHTML = '<i class="ph-bold ph-arrows-clockwise animate-spin"></i> Syncing';
                 initLoad();
             } else {
@@ -923,34 +855,20 @@
 
         document.getElementById('topup-form').addEventListener('submit', function(e) {
             e.preventDefault();
-            const isTransfer = document.getElementById('topup-transfer').checked;
             const amount = parseFloat(document.getElementById('top-amount').value);
-            if (isNaN(amount) || amount <= 0) return alert('請點擊輸入金額');
+            if (isNaN(amount) || amount <= 0) return alert('請輸入正確金額');
             
             const date = document.getElementById('top-date').value;
-            const targetLedger = currentLedger === 'shared' ? 'shared' : 'personal_' + userProfile.name;
             const note = document.getElementById('top-note').value;
             
-            let payloads = [];
-
-            payloads.push({
+            const payload = {
                 id: Date.now(), type: 'topup', date: date, 
-                desc: (isTransfer && currentLedger === 'shared') ? '自個人帳本轉入' : (currentLedger === 'shared' ? '存入公積金' : '新增個人收入'), 
-                amount: amount, category: 'topup', note: note, 
-                uploader: userProfile.name, ledger: targetLedger
-            });
-
-            if (currentLedger === 'shared' && isTransfer) {
-                payloads.push({
-                    id: Date.now() + 1, type: 'expense', date: date,
-                    desc: '轉出至共用公積金', amount: amount, payer: 'me', splitRatio: '100.00',
-                    category: 'other', note: '系統自動轉帳', isSettled: true,
-                    uploader: userProfile.name, ledger: 'personal_' + userProfile.name
-                });
-            }
+                desc: '存入公積金', amount: amount, category: 'topup', note: note, 
+                uploader: userProfile.name
+            };
 
             closeModal('topup-modal');
-            optimisticSendPost("addTransaction", payloads);
+            optimisticSendPost("addTransaction", payload);
         });
 
         function deleteTx(id) { if(confirm('確定刪除這筆紀錄？')) optimisticSendPost("deleteTransaction", { id: id }); }
@@ -960,7 +878,6 @@
             const t = db.transactions.find(x => x.id.toString() === id.toString());
             if(!t) return;
             const s = catIcons[t.category] || catIcons['other'];
-            // 支援自訂分類顯示
             let catLabelText = catIcons[t.category] ? catIcons[t.category].label : t.category;
 
             const content = document.getElementById('view-modal-content');
@@ -969,7 +886,6 @@
             let payerText = '公積金';
             if (t.payer === 'me') payerText = (t.uploader) ? `${t.uploader} 墊付` : '我';
             if (t.payer === 'partner') payerText = '另一半墊付';
-            if (currentLedger !== 'shared') payerText = '個人支出';
             
             content.innerHTML = `
                 <div class="flex items-center gap-3 mb-4">
@@ -995,10 +911,9 @@
             const list = document.getElementById('full-history-list');
             list.innerHTML = '';
             
-            window.currentTx.forEach(t => {
+            db.transactions.forEach(t => {
                 const s = catIcons[t.category] || catIcons['other'];
                 let payerDisplay = t.payer === 'me' ? (t.uploader || '我') : (t.payer === 'partner' ? '另一半' : '公積金');
-                if(currentLedger !== 'shared') payerDisplay = '個人';
 
                 let tag = t.type==='topup' ? `<span class="text-[9px] font-mono tracking-widest uppercase bg-[#EDF3EC] text-[#346538] px-1.5 py-0.5 rounded">入金/收入</span>` : 
                           (t.payer==='fund' ? `<span class="text-[9px] font-mono tracking-widest uppercase bg-line text-mute px-1.5 py-0.5 rounded">公積金</span>` : 
@@ -1091,7 +1006,7 @@
                 let localDateStr = new Date(d.getTime() - (d.getTimezoneOffset() * 60000)).toISOString().split('T')[0];
                 labels.push(localDateStr); 
             }
-            const lineData = labels.map(date => window.currentTx.filter(t => t.date === date && t.type === 'expense').reduce((sum, t) => sum + parseFloat(t.amount), 0));
+            const lineData = labels.map(date => db.transactions.filter(t => t.date === date && t.type === 'expense').reduce((sum, t) => sum + parseFloat(t.amount), 0));
             
             if(tChart) tChart.destroy();
             tChart = new Chart(ctxL, {
@@ -1102,8 +1017,7 @@
 
             const ctxC = document.getElementById('categoryChart').getContext('2d');
             const catSums = { 'food':0, 'housing':0, 'transport':0, 'entertainment':0, 'other':0 };
-            window.currentTx.filter(t => t.type === 'expense').forEach(t => { 
-                // 若為自訂分類(不在 catSums 內)，自動歸入 'other'
+            db.transactions.filter(t => t.type === 'expense').forEach(t => { 
                 if(catSums[t.category] !== undefined) {
                     catSums[t.category] += parseFloat(t.amount); 
                 } else {
